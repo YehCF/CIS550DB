@@ -32,7 +32,7 @@ uncleaned_data_primary %>%
 # run for multiple parties (e.g. conservative & republican). There are also multiple stages of election represented 
 # (both general and runoff), which will also cause duplicates with the previous primary key attributes. 
 uncleaned_data_primary_new_attrs <- uncleaned_data_primary %>% 
-  drop_na(party_detailed, state_abbreviation)
+  drop_na(party_detailed, stage)
 
 # check for duplicates again with the new primary keys: 
 uncleaned_data_primary_new_attrs %>% 
@@ -79,3 +79,4 @@ final_cleaned_df <- cleaned_won %>%
   mutate(special = ifelse(special, 1, 0), 
          writein = ifelse(writein, 1, 0))
 
+final_cleaned_df %>% write_csv("cleaned_voting_data.csv")
