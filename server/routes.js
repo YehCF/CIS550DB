@@ -116,9 +116,277 @@ async function state_stock(req, res) {
   }
 }
 
+/*
+Route For Yelp
+*/
+var yelp_period;
+/**
+ * Get time range when initialize
+ */
+const getTime = () =>{
+  connection.query(
+    `
+    SELECT DATE_FORMAT(MIN(review_date), "%Y-%m-%d") AS start_date, DATE_FORMAT(MAX(review_date), "%Y-%m-%d") AS end_date
+    FROM Review;
+    `,function (error, results) {
+      if (error) {
+        console.log(error);
+      } else if (results) {
+        // yelp_start_date = results[0].start_date;
+        // console.log(yelp_start_date);
+        // yelp_last_date = results[0].end_date;
+        // console.log(yelp_last_date);
+        yelp_period = results;
+      }
+    }
+  );
+}
+getTime();
+
+//Route5
+/**
+ * Get yelp review counts by state
+ * @param startDate start date for calculate yelp review count
+ * @param endDate end date for calculate yelp review count
+ */
+/*
+Examples:
+  http://localhost:8080/yelp
+  http://localhost:8080/yelp?start=2020-03-01&end=2020-03-31
+ */
+async function yelp_map(req, res) {
+  const startDate = req.query.start ? req.query.start : yelp_period[0].start_date;
+  const endDate = req.query.end ? req.query.end : yelp_period[0].end_date;
+  connection.query(
+    `
+    SELECT s.abbreviation AS state, IFNULL(review_count, 0)
+    FROM State s LEFT JOIN
+    (
+      SELECT state, COUNT(b.id) AS review_count
+      FROM Business b JOIN
+          (
+              SELECT business_id
+              FROM Review
+              WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+          )rev
+      ON b.id = rev.business_id
+      GROUP BY state
+    )rc
+    ON s.abbreviation=rc.state`,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+        // console.log(Object.values(results).length);
+      }
+    }
+  );
+}
+
+//Route 6
+/**
+ * Get all categories for filter
+ */
+/*
+Examples:
+  http://localhost:8080/yelp/categories
+*/
+async function yelp_categories(req, res) {
+  connection.query(
+    `
+    SELECT *
+    FROM Categories;`,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+        // console.log(Object.values(results).length);
+      }
+    }
+  );
+}
+
+//Route 7
+/**
+ * Get all state for filter
+ */
+/*
+Examples:
+  http://localhost:8080/yelp/state
+*/
+async function yelp_state(req, res) {
+  connection.query(
+    `
+    SELECT DISTINCT state
+    FROM Business;`,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+        // console.log(Object.values(results).length);
+      }
+    }
+  );
+}
+
+//Route 8
+/**
+ * Get time range for filter
+ */
+/*
+Examples:
+  http://localhost:8080/yelp/time
+*/
+async function yelp_time(req, res) {
+  res.json({ results: yelp_period });
+}
+
+//Route 9
+//Yelp filter function
+/**
+ * Get yelp review counts by state
+ * @param startDate filter by start date
+ * @param endDate filter by end date
+ * @param state filter by specific state
+ * @param categories filter by specific categories
+ */
+
+/*
+Examples:
+  http://localhost:8080/yelp/filter
+  http://localhost:8080/yelp/filter?state=FL
+  http://localhost:8080/yelp/filter?categories=Apartments
+  http://localhost:8080/yelp/filter?state=FL&categories=Apartments
+*/
+async function yelp_filter(req, res) {
+  const startDate = req.query.start ? req.query.start : yelp_period[0].start_date;
+  const endDate = req.query.end ? req.query.end : yelp_period[0].end_date;
+  const state = req.query.state;
+  const categories = req.query.categories;
+
+  if(state && categories){  //state and categories is not null
+    connection.query(
+      `
+      WITH match_categories AS
+      (
+          SELECT bc.business_id AS id
+          FROM(SELECT business_id
+              FROM Business_Categories
+              WHERE categories = '${categories}'
+            ) bc
+          JOIN Business b
+          ON bc.business_id = b.id
+          WHERE b.state = '${state}'
+      )
+      SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
+      FROM Review r JOIN
+      match_categories b
+      ON r.business_id=b.id
+      WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+      GROUP BY review_date
+      ORDER BY review_date;`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+          // console.log(Object.values(results).length);
+          // console.log("both");
+        }
+      }
+    );
+  }else if(state){          //state is not null
+    connection.query(
+      `
+      SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
+      FROM Review r JOIN
+          (
+              SELECT id
+              FROM Business
+              WHERE state = '${state}'
+          )b
+      ON r.business_id=b.id
+      WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+      GROUP BY review_date
+      ORDER BY review_date;
+     `,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+          // console.log(Object.values(results).length);
+          // console.log("state");
+        }
+      }
+    );
+  }else if(categories){     //categories is not null
+    connection.query(
+      `
+      WITH match_categories AS
+      (
+          SELECT business_id AS id
+          FROM Business_Categories
+          WHERE categories = '${categories}'
+      )
+      SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
+      FROM Review r JOIN
+      match_categories b
+      ON r.business_id=b.id
+      WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+      GROUP BY review_date
+      ORDER BY review_date;
+     `,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+          // Console.log(Object.values(results).length);
+          // console.log("categories");
+        }
+      }
+    );
+  }else{                    //both state and categories is null
+    connection.query(
+      `
+      SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
+      FROM Review r
+      WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+      GROUP BY review_date
+      ORDER BY review_date;
+     `,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+          // console.log(Object.values(results).length);
+          // console.log("null");
+        }
+      }
+    );
+  }
+}
+
 module.exports = {
   hello,
   stock,
   stock_popular,
   state_stock,
+  yelp_map,
+  yelp_categories,
+  yelp_state,
+  yelp_time,
+  yelp_filter
 };
