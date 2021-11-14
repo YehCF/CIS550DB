@@ -11,109 +11,82 @@ const connection = mysql.createConnection({
 });
 connection.connect();
 
+async function case_and_stock(req, res) {
+  const code = req.query.code ? req.query.code : "AAPL";
+  const state = req.query.state ? req.query.state : "NY";
+  const startDate = req.query.start ? req.query.start : "2020-01-01";
+  const endDate = req.query.end ? req.query.end : "2020-12-31";
+  connection.query(
+    `
+    SELECT DATE_FORMAT(D.submission_date, "%m-%d-%Y") AS date, S.close AS price, D.new_case AS ncase
+    FROM Day D JOIN Stock S 
+      ON D.submission_date = S.date
+    WHERE D.state = '${state}' 
+        AND D.submission_date >= '${startDate}'
+        AND D.submission_date <= '${endDate}'
+        AND S.code = '${code}'
+    `,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
+    }
+  );
+}
+
+async function get_states(req, res) {
+  connection.query(
+    `
+    SELECT abbreviation AS state
+    FROM State 
+    `,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
+    }
+  );
+}
+
+// for test state map
+async function state_stock(req, res) {
+  const startDate = req.query.start ? req.query.start : "2020-01-01";
+  const endDate = req.query.end ? req.query.end : "2020-12-31";
+  connection.query(
+    `
+    WITH DailyStatePrice AS (
+      SELECT DATE_FORMAT(date, '%m-%d-%Y') AS date, C.state AS state, AVG(S.close) AS price
+      FROM Stock S LEFT JOIN Company C
+      ON S.code = C.code
+      WHERE S.date >= '${startDate}' AND S.date <= '${endDate}'
+      GROUP BY S.date, C.state
+  )
+  SELECT DP.state, (MAX(DP.price) - MIN(DP.price)) / MIN(DP.price) AS volatility
+  FROM DailyStatePrice DP
+  GROUP BY DP.state;
+    `,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
+    }
+  );
+}
+
 // hello world
 async function hello(req, res) {
   res.send(
     `This is CIS450/550 Final Project (Group31) - Polls, Pandemics and Possibly More!`
   );
-}
-
-// specific stock from start to end date
-async function stock(req, res) {
-  const code = req.query.code ? req.query.code : "AAPL";
-  const startDate = req.query.start ? req.query.start : "2020-01-01";
-  const endDate = req.query.end ? req.query.end : "2020-12-31";
-  connection.query(
-    `
-    SELECT DATE_FORMAT(date, "%m-%d-%Y") as date, close
-    FROM Stock S 
-    WHERE S.code = '${code}' 
-        AND S.date >= '${startDate}'
-        AND S.date <= '${endDate}'
-    `,
-    function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
-    }
-  );
-}
-
-// popular stock
-async function stock_popular(req, res) {
-  const startDate = req.query.start ? req.query.start : "2020-01-01";
-  const endDate = req.query.end ? req.query.end : "2020-12-31";
-  const ratio = req.query.ratio ? req.query.ratio : 1;
-  connection.query(
-    `
-    WITH Popular AS (
-      SELECT S.code
-      FROM Stock S
-      WHERE S.date >= '${startDate}'
-        AND S.date <= '${endDate}'
-      GROUP BY S.code
-      HAVING (MAX(S.close) - MIN(S.close)) / MIN(S.close) >= '${ratio}'
-    )
-    SELECT code, date, close
-    FROM Stock S
-    WHERE S.date >= '${startDate}'
-      AND S.date <= '${endDate}'
-      AND S.code in (SELECT * FROM Popular)
-    `,
-    function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
-    }
-  );
-}
-
-// state's close price
-async function state_stock(req, res) {
-  const startDate = req.query.start ? req.query.start : "2020-01-01";
-  const endDate = req.query.end ? req.query.end : "2020-12-31";
-  const GICS = req.query.GICS;
-  if (GICS) {
-    connection.query(
-      `
-      SELECT DATE_FORMAT(date, "%m-%d-%Y") AS date, C.state AS state, AVG(S.close) AS price
-      FROM Stock S LEFT JOIN Company C 
-        ON S.code = C.code
-      WHERE S.date >= '${startDate}' AND S.date <= '${endDate}' AND C.GICS LIKE '%${GICS}%'
-      GROUP BY S.date, C.state`,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
-      }
-    );
-  } else {
-    connection.query(
-      `
-      SELECT DATE_FORMAT(date, "%m-%d-%Y") AS date, C.state AS state, AVG(S.close) AS price
-      FROM Stock S LEFT JOIN Company C 
-        ON S.code = C.code
-      WHERE S.date >= '${startDate}' AND S.date <= '${endDate}'
-      GROUP BY S.date, C.state`,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
-      }
-    );
-  }
 }
 
 /*
@@ -485,25 +458,23 @@ async function yelp_filter(req, res) {
  * @param minyear = low end of year range to consider (default=2020)
  * @param maxyear = high end of range to consider (default=2020)
  * */
-async function elections(req, res){
-    const minyear = req.query.minyear ? req.query.minyear : 2020;
-    const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
-    query = `SELECT party_detailed, state_abbreviation, COUNT(*) AS num_elections_won 
+async function elections(req, res) {
+  const minyear = req.query.minyear ? req.query.minyear : 2020;
+  const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
+  query = `SELECT party_detailed, state_abbreviation, COUNT(*) AS num_elections_won 
     FROM Elections
     WHERE year >= ${minyear} and year <= ${maxyear} AND won=1
-    GROUP BY party_detailed, state_abbreviation`
-    //make the query and log the results
-    connection.query(query, function(error, results, fields){
-        if (error) {
-            console.log(error);
-            res.json({ error: error });
-        } else if (results) {
-            res.json({ results: results });
-        }
-    })
+    GROUP BY party_detailed, state_abbreviation`;
+  //make the query and log the results
+  connection.query(query, function (error, results, fields) {
+    if (error) {
+      console.log(error);
+      res.json({ error: error });
+    } else if (results) {
+      res.json({ results: results });
+    }
+  });
 }
-
-
 
 /**
  * Route 11
@@ -514,42 +485,43 @@ async function elections(req, res){
  * @param limit the user can optionally only view the top n results
  * */
 async function elections_fewest(req, res) {
-    //get the parameters, using defaults where not specified
-    const minyear = req.query.minyear ? req.query.minyear : 1976;
-    const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
-    const limit = req.query.limit ? req.query.limit : 0;
-    const state = req.query.state;
-    //first portion of the query
-    query = `SELECT party_detailed, COUNT(*) AS num_elections
+  //get the parameters, using defaults where not specified
+  const minyear = req.query.minyear ? req.query.minyear : 1976;
+  const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
+  const limit = req.query.limit ? req.query.limit : 0;
+  const state = req.query.state;
+  //first portion of the query
+  query = `SELECT party_detailed, COUNT(*) AS num_elections
     FROM Elections E1
     WHERE `;
-    //user can choose to only consider one state, which we can insert into the query here
-    if (state){
-        query = query + ` state_abbreviation = "${state}" AND `
-    }
-    // second part of the query
-    query = query + `year >= ${minyear} AND year <= ${maxyear} AND percent_votes <= ALL(
+  //user can choose to only consider one state, which we can insert into the query here
+  if (state) {
+    query = query + ` state_abbreviation = "${state}" AND `;
+  }
+  // second part of the query
+  query =
+    query +
+    `year >= ${minyear} AND year <= ${maxyear} AND percent_votes <= ALL(
         SELECT percent_votes
         FROM Elections E2 
         WHERE E2.year = E1.year AND E2.state_abbreviation = E1.state_abbreviation
     )
     GROUP BY party_detailed
-    ORDER BY num_elections DESC`
-    // user can only select the top n if they choose
-    if (limit > 0){
-        query = query + ` LIMIT ${limit}`
+    ORDER BY num_elections DESC`;
+  // user can only select the top n if they choose
+  if (limit > 0) {
+    query = query + ` LIMIT ${limit}`;
+  }
+  //make the query and log the results
+  connection.query(query, function (error, results, fields) {
+    if (error) {
+      console.log(error);
+      res.json({ error: error });
+    } else if (results) {
+      res.json({ results: results });
     }
-    //make the query and log the results
-    connection.query(query, function(error, results, fields){
-        if (error) {
-            console.log(error);
-            res.json({ error: error });
-        } else if (results) {
-            res.json({ results: results });
-        }
-    })
+  });
 }
-
 
 /**
  * Route 12
@@ -558,13 +530,13 @@ async function elections_fewest(req, res) {
  * @param maxyear the high end of the range of years to consider (default = 2020)
  * @param party the party that we want to consider (default = Democrat)
  * */
-async function elections_most_party(req, res){
-    //get the parameters from the user
-    const minyear = req.query.minyear ? req.query.minyear : 1976;
-    const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
-    const party = req.query.party ? req.query.party : "DEMOCRAT";
-    //define the query
-    query = `
+async function elections_most_party(req, res) {
+  //get the parameters from the user
+  const minyear = req.query.minyear ? req.query.minyear : 1976;
+  const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
+  const party = req.query.party ? req.query.party : "DEMOCRAT";
+  //define the query
+  query = `
     WITH Temp AS(
         SELECT state_abbreviation, COUNT(*) AS num_candidates 
         FROM Elections 
@@ -582,18 +554,17 @@ async function elections_most_party(req, res){
     SELECT S.abbreviation, S.name, T.num_candidates
     FROM Temp T JOIN State S ON T.state_abbreviation = S.abbreviation
     ORDER BY num_candidates DESC;
-`
-    //make the query and log the results
-    connection.query(query, function(error, results, fields){
-        if (error) {
-            console.log(error);
-            res.json({ error: error });
-        } else if (results) {
-            res.json({ results: results });
-        }
-    })
+`;
+  //make the query and log the results
+  connection.query(query, function (error, results, fields) {
+    if (error) {
+      console.log(error);
+      res.json({ error: error });
+    } else if (results) {
+      res.json({ results: results });
+    }
+  });
 }
-
 
 /**
  * Route 13
@@ -602,13 +573,13 @@ async function elections_most_party(req, res){
  * @param maxyear the high end of the range of years to consider (default = 2020)
  * @param limit the number of high and low population states to consider (default = 5)
  * */
-async function elections_populous(req, res){
-    //get the parameters, using defaults where not specified
-    const minyear = req.query.minyear ? req.query.minyear : 1976;
-    const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
-    const limit = req.query.limit ? req.query.limit : 5;
-    // write out the query
-    query = ` WITH most_populous_states AS (
+async function elections_populous(req, res) {
+  //get the parameters, using defaults where not specified
+  const minyear = req.query.minyear ? req.query.minyear : 1976;
+  const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
+  const limit = req.query.limit ? req.query.limit : 5;
+  // write out the query
+  query = ` WITH most_populous_states AS (
         SELECT abbreviation 
         FROM State 
         ORDER BY population DESC 
@@ -631,44 +602,44 @@ async function elections_populous(req, res){
         WHERE E.won = 1 AND E.year <= ${maxyear} AND E.year >= ${minyear}
         GROUP BY party_detailed) L
         ON M.party_detailed = L.party_detailed
-    `
-    //execute the query and return the results
-    connection.query(query, function(error, results, fields){
-        if (error) {
-            console.log(error);
-            res.json({ error: error });
-        } else if (results) {
-            res.json({ results: results });
-        }
-    })
+    `;
+  //execute the query and return the results
+  connection.query(query, function (error, results, fields) {
+    if (error) {
+      console.log(error);
+      res.json({ error: error });
+    } else if (results) {
+      res.json({ results: results });
+    }
+  });
 }
 
 /**Route 14
  * Are more companies in blue or red states in a given year?
  * @param : year in which to conduct the calculation*/
 async function company_political(req, res) {
-    //get the user parameters
-    const year = req.query.year ? req.query.year : 2020;
-    // write the query
-    query = `SELECT E.party_detailed, COUNT(DISTINCT C.name) AS num_companies
+  //get the user parameters
+  const year = req.query.year ? req.query.year : 2020;
+  // write the query
+  query = `SELECT E.party_detailed, COUNT(DISTINCT C.name) AS num_companies
         FROM Company C JOIN Elections E on C.state = E.state_abbreviation
         WHERE E.won = 1 AND E.year = ${year}
         GROUP BY E.party_detailed `;
-    //execute the query and return the results
-    connection.query(query, function(error, results, fields){
-        if (error) {
-            console.log(error);
-            res.json({ error: error });
-        } else if (results) {
-            res.json({ results: results });
-        }
-    })
+  //execute the query and return the results
+  connection.query(query, function (error, results, fields) {
+    if (error) {
+      console.log(error);
+      res.json({ error: error });
+    } else if (results) {
+      res.json({ results: results });
+    }
+  });
 }
 
 module.exports = {
   hello,
-  stock,
-  stock_popular,
+  case_and_stock,
+  get_states,
   state_stock,
   yelp_map,
   yelp_categories,
@@ -679,5 +650,5 @@ module.exports = {
   elections_fewest,
   elections_most_party,
   elections_populous,
-  company_political
+  company_political,
 };

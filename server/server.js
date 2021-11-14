@@ -15,13 +15,15 @@ app.use(
 app.get("/hello", routes.hello);
 
 // Route 2
-app.get("/stock", routes.stock);
-// Route 3
-app.get("/stock/popular", routes.stock_popular);
-// Route 4
-app.get("/state/stock", routes.state_stock);
+app.get("/case_and_stock", routes.case_and_stock);
 
-/*Yelp Route*/ 
+// Route 3
+app.get("/get_states", routes.get_states);
+
+// Route map test
+app.get("/state_stock", routes.state_stock);
+
+/*Yelp Route*/
 // Route 5
 app.get("/yelp", routes.yelp_map);
 //Route 6
