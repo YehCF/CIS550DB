@@ -12,53 +12,7 @@ import moment from "moment";
 import MenuBar from "../components/MenuBar";
 import { getAllStates, getStateStock, getStateCases } from "../fetcher";
 import USAMap from "react-usa-map";
-import * as d3 from "d3";
-
-//Color array for Bivariate Choropleth Map
-const h = 100;
-const w = 100;
-const nColors = 5;
-var svg = d3.select("body").append("svg").attr("width", w).attr("height", h);
-var data = d3.range(nColors).reduce(function (arr, elem) {
-  return arr.concat(
-    d3.range(nColors).map(function (d) {
-      return {
-        col: elem,
-        row: d,
-      };
-    })
-  );
-}, []);
-const scale1 = d3
-  .scaleLinear()
-  .range(["#e8e8e8", "#5ac8c8"])
-  .domain([0, nColors - 1]);
-const scale2 = d3
-  .scaleLinear()
-  .range(["#e8e8e8", "#be64ac"])
-  .domain([0, nColors - 1]);
-let colorArray = [];
-for (let i = 0; i < nColors; i++) {
-  let subArray = [];
-  for (let j = 0; j < nColors; j++) {
-    subArray[j] = d3.scaleLinear().range([scale1(j), scale2(i)])(0.5);
-  }
-  colorArray[i] = subArray;
-}
-const rects = svg
-  .selectAll(null)
-  .data(data)
-  .enter()
-  .append("rect")
-  .attr("x", (d) => (d.col * w) / nColors)
-  .attr("y", (d) => (d.row * h) / nColors)
-  .attr("width", w / nColors)
-  .attr("height", h / nColors)
-  .attr("transform", "translate(0, 0)")
-  .attr("fill", function (d) {
-    return colorArray[d.col][d.row];
-  });
-
+import { nColors, colorArray, MapLegend } from "../components/MapLegend";
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
 
@@ -242,6 +196,7 @@ class StatePage extends React.Component {
             style={{ width: "70vw", margin: "0 auto", marginTop: "5vh" }}
           >
             <USAMap customize={this.state.stateResults} />
+            <MapLegend />
           </div>
         </Divider>
         <Divider>
