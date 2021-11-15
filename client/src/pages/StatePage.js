@@ -10,31 +10,74 @@ import {
 import { Divider, Row, Col, DatePicker, Space } from "antd";
 import moment from "moment";
 import MenuBar from "../components/MenuBar";
-import { getAllStates, getStateStock } from "../fetcher";
+import { getAllStates, getStateStock, getStateCases } from "../fetcher";
 import USAMap from "react-usa-map";
-import colormap from "colormap";
+import * as d3 from "d3";
+
+//Color array for Bivariate Choropleth Map
+const h = 100;
+const w = 100;
+const nColors = 5;
+var svg = d3.select("body").append("svg").attr("width", w).attr("height", h);
+var data = d3.range(nColors).reduce(function (arr, elem) {
+  return arr.concat(
+    d3.range(nColors).map(function (d) {
+      return {
+        col: elem,
+        row: d,
+      };
+    })
+  );
+}, []);
+const scale1 = d3
+  .scaleLinear()
+  .range(["#e8e8e8", "#5ac8c8"])
+  .domain([0, nColors - 1]);
+const scale2 = d3
+  .scaleLinear()
+  .range(["#e8e8e8", "#be64ac"])
+  .domain([0, nColors - 1]);
+let colorArray = [];
+for (let i = 0; i < nColors; i++) {
+  let subArray = [];
+  for (let j = 0; j < nColors; j++) {
+    subArray[j] = d3.scaleLinear().range([scale1(j), scale2(i)])(0.5);
+  }
+  colorArray[i] = subArray;
+}
+const rects = svg
+  .selectAll(null)
+  .data(data)
+  .enter()
+  .append("rect")
+  .attr("x", (d) => (d.col * w) / nColors)
+  .attr("y", (d) => (d.row * h) / nColors)
+  .attr("width", w / nColors)
+  .attr("height", h / nColors)
+  .attr("transform", "translate(0, 0)")
+  .attr("fill", function (d) {
+    return colorArray[d.col][d.row];
+  });
 
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
 
-// colors on the map
-const numberOfColors = 15;
-
-const colors = colormap({
-  colormap: "portland",
-  nshades: numberOfColors + 1,
-  format: "hex",
-  alpha: 1.0,
-});
-
 // helper for stock related info
 const volatilityToColor = (volatility) => {
   const maxVolatilityRatio = 1.2;
-  volatility = Math.round(
-    Math.min(volatility, maxVolatilityRatio) *
-      (numberOfColors / maxVolatilityRatio)
+  const color_index = Math.round(
+    Math.min(volatility, maxVolatilityRatio) * (nColors / maxVolatilityRatio)
   );
-  return colors[volatility];
+  return Math.min(color_index, nColors - 1);
+};
+
+// helper for state confirmed case ratio (currently, this ratio is normalized)
+const ncaseRatioToColor = (ratio) => {
+  const maxRatio = 1.0;
+  const color_index = Math.round(
+    Math.min(ratio, maxRatio) * (nColors / maxRatio)
+  );
+  return Math.min(color_index, nColors - 1);
 };
 
 class StatePage extends React.Component {
@@ -50,6 +93,7 @@ class StatePage extends React.Component {
     };
 
     this.handleStateStock = this.handleStateStock.bind(this);
+    this.handleStateCases = this.handleStateCases.bind(this);
     this.handleCalendarChange = this.handleCalendarChange.bind(this);
   }
 
@@ -67,8 +111,9 @@ class StatePage extends React.Component {
         // template for each state
         const stateInfo = {
           stockVolatility: 0,
-          ncase: 0,
-          fill: colors[0],
+          numConfirmedCases: 0,
+          numConfirmedCasesRatio: 0,
+          fill: colorArray[0][0], // default color
           // TO-DO: add other key-values for initialization
         };
         for (const state of this.state.allStates) {
@@ -89,6 +134,7 @@ class StatePage extends React.Component {
 
   componentDidMount() {
     this.initStateResults();
+    this.handleStateCases();
     this.handleStateStock();
   }
 
@@ -101,6 +147,7 @@ class StatePage extends React.Component {
   }
 
   handleStateStock(event) {
+    // event => null or the input from calendar
     let start = this.state.startDate;
     let end = this.state.endDate;
     if (event && event[0] && event[1]) {
@@ -112,11 +159,49 @@ class StatePage extends React.Component {
       const newStateResults = {};
       // only update the stock related info
       for (const info of res.results) {
-        newStateResults[info["state"]] = {
-          ...this.state.stateResults[info["state"]],
-          stockVolatility: info["volatility"].toFixed(3),
-          fill: volatilityToColor(info["volatility"]),
-        };
+        if (info["state"]) {
+          newStateResults[info["state"]] = {
+            ...this.state.stateResults[info["state"]],
+            stockVolatility: info["volatility"].toFixed(3),
+            fill: colorArray[
+              ncaseRatioToColor(
+                this.state.stateResults[info["state"]]["numConfirmedCasesRatio"]
+              )
+            ][volatilityToColor(info["volatility"])],
+          };
+        }
+      }
+      // set state to update the map for new stock info
+      this.setState({
+        stateResults: { ...this.state.stateResults, ...newStateResults },
+      });
+    });
+  }
+
+  handleStateCases(event) {
+    let start = this.state.startDate;
+    let end = this.state.endDate;
+    if (event && event[0] && event[1]) {
+      start = event[0].format(dateFormat).toString();
+      end = event[1].format(dateFormat).toString();
+    }
+    getStateCases(start, end).then((res) => {
+      // collect new state results
+      const newStateResults = {};
+      // only update the stock related info
+      for (const info of res.results) {
+        if (info["state"]) {
+          newStateResults[info["state"]] = {
+            ...this.state.stateResults[info["state"]],
+            numConfirmedCases: info["ncase"],
+            numConfirmedCasesRatio: info["ratio"].toFixed(3),
+            fill: colorArray[ncaseRatioToColor(info["ratio"])][
+              volatilityToColor(
+                this.state.stateResults[info["state"]]["stockVolatility"]
+              )
+            ],
+          };
+        }
       }
       // set state to update the map for new stock info
       this.setState({
@@ -167,6 +252,16 @@ class StatePage extends React.Component {
                   <CardTitle>
                     <h3>{this.state.selectedStateInfo["state"]}</h3>
                   </CardTitle>
+                  <Row gutter="30" align="middle" justify="center">
+                    <Col>
+                      Confirmed Cases:{" "}
+                      {this.state.selectedStateInfo["numConfirmedCases"]} (n)
+                    </Col>
+                    <Col>
+                      Normalized Ratio to Population:
+                      {this.state.selectedStateInfo["numConfirmedCasesRatio"]}
+                    </Col>
+                  </Row>
                   {/* for stock */}
                   <Row gutter="30" align="middle" justify="center">
                     <Col>

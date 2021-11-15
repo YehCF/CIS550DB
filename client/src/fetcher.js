@@ -29,4 +29,14 @@ const getStateStock = async (start, end) => {
   );
   return res.json();
 };
-export { getCaseAndStock, getAllStates, getStateStock };
+
+const getStateCases = async (start, end) => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/state_confirmed_case?start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+export { getCaseAndStock, getAllStates, getStateStock, getStateCases };

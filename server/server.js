@@ -22,6 +22,7 @@ app.get("/get_states", routes.get_states);
 
 // Route map test
 app.get("/state_stock", routes.state_stock);
+app.get("/state_confirmed_case", routes.state_confirmed_case);
 
 /*Yelp Route*/
 // Route 5

@@ -81,6 +81,36 @@ async function state_stock(req, res) {
     }
   );
 }
+// get the total of confirmed case in a period for each state (test for map)
+async function state_confirmed_case(req, res) {
+  const startDate = req.query.start ? req.query.start : "2020-01-01";
+  const endDate = req.query.end ? req.query.end : "2020-12-31";
+  connection.query(
+    `
+    WITH StateCase AS (
+      SELECT state, SUM(new_case) AS ncase
+      FROM Day
+      WHERE submission_date >= '${startDate}'
+      AND submission_date <= '${endDate}'
+      GROUP BY state
+    ), StateCaseRatio AS (
+        SELECT C.state AS state, C.ncase AS ncase, (C.ncase / S.population) AS ratio
+        FROM StateCase C LEFT JOIN State S
+         ON C.state = S.abbreviation
+    )
+    SELECT state, ncase, ratio / (SELECT MAX(ratio) FROM StateCaseRatio) AS ratio
+    FROM StateCaseRatio;
+    `,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
+    }
+  );
+}
 
 // hello world
 async function hello(req, res) {
@@ -641,6 +671,7 @@ module.exports = {
   case_and_stock,
   get_states,
   state_stock,
+  state_confirmed_case,
   yelp_map,
   yelp_categories,
   yelp_state,
