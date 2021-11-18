@@ -1,18 +1,8 @@
 import config from "./config.json";
 
-const getCaseAndStock = async (code, state, start, end) => {
-  var res = await fetch(
-    `http://${config.server_host}:${config.server_port}/case_and_stock?code=${code}&state=${state}&start=${start}&end=${end}`,
-    {
-      method: "GET",
-    }
-  );
-  return res.json();
-};
-
 const getAllStates = async () => {
   var res = await fetch(
-    `http://${config.server_host}:${config.server_port}/get_states`,
+    `http://${config.server_host}:${config.server_port}/states`,
     {
       method: "GET",
     }
@@ -20,9 +10,9 @@ const getAllStates = async () => {
   return res.json();
 };
 
-const getStateStock = async (start, end) => {
+const getCaseAndStock = async (code, state, start, end) => {
   var res = await fetch(
-    `http://${config.server_host}:${config.server_port}/state_stock?start=${start}&end=${end}`,
+    `http://${config.server_host}:${config.server_port}/case/stock?code=${code}&state=${state}&start=${start}&end=${end}`,
     {
       method: "GET",
     }
@@ -30,13 +20,23 @@ const getStateStock = async (start, end) => {
   return res.json();
 };
 
-const getStateCases = async (start, end) => {
+const getStateVolatility = async (start, end) => {
   var res = await fetch(
-    `http://${config.server_host}:${config.server_port}/state_confirmed_case?start=${start}&end=${end}`,
+    `http://${config.server_host}:${config.server_port}/state/volatility?start=${start}&end=${end}`,
     {
       method: "GET",
     }
   );
   return res.json();
 };
-export { getCaseAndStock, getAllStates, getStateStock, getStateCases };
+
+const getStateCaseNorm = async (start, end) => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/state/case/norm?start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+export { getCaseAndStock, getAllStates, getStateVolatility, getStateCaseNorm };

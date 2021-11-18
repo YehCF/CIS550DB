@@ -17,7 +17,7 @@ const DemoDualAxes = (data) => {
   var config = {
     data: [data.data, data.data],
     xField: "date",
-    yField: ["price", "ncase"],
+    yField: ["price", "new_case"],
     geometryOptions: [
       {
         geometry: "line",
@@ -97,6 +97,7 @@ class StockPage extends React.Component {
       this.state.startDate,
       this.state.endDate
     ).then((res) => {
+      console.log(res.results);
       this.setState({ stockResults: res.results });
     });
   }
@@ -178,7 +179,7 @@ class StockPage extends React.Component {
             marginTop: "5vh",
           }}
         >
-          Price & Confirmed Cases
+          Price & New Cases
           <DemoDualAxes data={this.state.stockResults} />
         </div>
       </div>

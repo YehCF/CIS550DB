@@ -226,8 +226,7 @@ async function search_stocks(req, res) {
  * Get the daily price (close) of the selected stock and the number of new cases (total in all the states or where the headquarter of the company is)
  * Route: /case/stock
  * Route Parameter(s) @param: None
- * Query Parameter(s) @param: start (Date), end (Date), code (string), state (string), case_in_state (Bool) (default: False)
- * - case_in_state: whether to use new_case of the state (case_in_state = True) where the headquarter is or use the total in all the states (case_in_state=False)
+ * Query Parameter(s) @param: start (Date), end (Date), code (string), state (string)
  * Route Handler: case_and_stock(req, res)
  * Return Type: JSON
  * Return Parameters:
@@ -241,8 +240,7 @@ async function case_and_stock(req, res) {
   const state = req.query.state;
   const start = req.query.start;
   const end = req.query.end;
-  const case_in_state = req.query.case_in_state;
-  if (case_in_state) {
+  if (state) {
     connection.query(
       `
       SELECT DATE_FORMAT(D.submission_date, "%m-%d-%Y") AS date, S.close AS price, D.new_case AS new_case

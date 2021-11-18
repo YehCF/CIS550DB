@@ -10,7 +10,7 @@ import {
 import { Divider, Row, Col, DatePicker, Space } from "antd";
 import moment from "moment";
 import MenuBar from "../components/MenuBar";
-import { getAllStates, getStateStock, getStateCases } from "../fetcher";
+import { getAllStates, getStateVolatility, getStateCaseNorm } from "../fetcher";
 import USAMap from "react-usa-map";
 import { nColors, colorArray, MapLegend } from "../components/MapLegend";
 const dateFormat = "YYYY-MM-DD";
@@ -108,7 +108,7 @@ class StatePage extends React.Component {
       start = event[0].format(dateFormat).toString();
       end = event[1].format(dateFormat).toString();
     }
-    getStateStock(start, end).then((res) => {
+    getStateVolatility(start, end).then((res) => {
       // collect new state results
       const newStateResults = {};
       // only update the stock related info
@@ -139,7 +139,7 @@ class StatePage extends React.Component {
       start = event[0].format(dateFormat).toString();
       end = event[1].format(dateFormat).toString();
     }
-    getStateCases(start, end).then((res) => {
+    getStateCaseNorm(start, end).then((res) => {
       // collect new state results
       const newStateResults = {};
       // only update the stock related info
@@ -147,9 +147,9 @@ class StatePage extends React.Component {
         if (info["state"]) {
           newStateResults[info["state"]] = {
             ...this.state.stateResults[info["state"]],
-            numConfirmedCases: info["ncase"],
-            numConfirmedCasesRatio: info["ratio"].toFixed(3),
-            fill: colorArray[ncaseRatioToColor(info["ratio"])][
+            numConfirmedCases: info["new_case"],
+            numConfirmedCasesRatio: info["norm_ratio"].toFixed(3),
+            fill: colorArray[ncaseRatioToColor(info["norm_ratio"])][
               volatilityToColor(
                 this.state.stateResults[info["state"]]["stockVolatility"]
               )
