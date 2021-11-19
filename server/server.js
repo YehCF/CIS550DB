@@ -3,7 +3,6 @@ const mysql = require("mysql");
 const routes = require("./routes");
 const config = require("./config.json");
 const cors = require("cors");
-const {company_political, elections_fewest} = require("./routes");
 
 const app = express();
 app.use(
@@ -35,13 +34,15 @@ app.get("/yelp/time", routes.yelp_time);
 app.get("/yelp/filter", routes.yelp_filter);
 
 /*Election Routes*/
-// app.get("/elections", )
-app.get("/elections/fewest", elections_fewest);
+// Route 10
+app.get("/elections", routes.elections);
+// Route 11
+app.get("/elections/fewest", routes.elections_fewest);
 // app.get("/elections/most_of_party")
 // app.get("/elections/populous")
 
 /*Combination Routes*/
-app.get("/stock/political", company_political);
+app.get("/stock/political", routes.company_political);
 
 app.listen(config.server_port, () => {
   console.log(

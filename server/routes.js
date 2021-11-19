@@ -379,12 +379,20 @@ async function yelp_filter(req, res) {
   }
 }
 
-async function company_political(req, res) {
-    const year = req.query.year ? req.query.year : 2020;
-    query = `SELECT E.party_simplified, COUNT(DISTINCT C.name) AS num_companies
-        FROM Company C JOIN Elections E on C.state = E.state_abbreviation
-        WHERE E.won = 1 AND E.year = ${year}
-        GROUP BY E.party_simplified `;
+/**
+ * Route 10
+ * Get the number of wins for each party for each state over a year range
+ * @param minyear = low end of year range to consider (default=2020)
+ * @param maxyear = high end of range to consider (default=2020)
+ * */
+async function elections(req, res){
+    const minyear = req.query.minyear ? req.query.minyear : 2020;
+    const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
+    query = `SELECT party_detailed, state_abbreviation, COUNT(*) AS num_elections_won 
+    FROM Elections
+    WHERE year >= ${minyear} and year <= ${maxyear} AND won=1
+    GROUP BY party_detailed, state_abbreviation`
+    //make the query and log the results
     connection.query(query, function(error, results, fields){
         if (error) {
             console.log(error);
@@ -395,30 +403,59 @@ async function company_political(req, res) {
     })
 }
 
+
+
+/**
+ * Route 11
+ * Get the parties that most consistently get the fewest votes in an election
+ * @param minyear the low end of the range of years to consider (default = beginning of data)
+ * @param maxyear the high end of the range of years to consider (default = 2020)
+ * @param state the user can optionally limit the resutls to a single state
+ * @param limit the user can optionally only view the top n results
+ * */
 async function elections_fewest(req, res) {
+    //get the parameters, using defaults where not specified
     const minyear = req.query.minyear ? req.query.minyear : 1976;
     const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
     const limit = req.query.limit ? req.query.limit : 0;
     const state = req.query.state;
+    //first portion of the query
     query = `SELECT party_detailed, COUNT(*) AS num_elections
     FROM Elections E1
     WHERE `;
-    //user can choose to only consider one state
+    //user can choose to only consider one state, which we can insert into the query here
     if (state){
         query = query + ` state_abbreviation = "${state}" AND `
     }
+    // second part of the query
     query = query + `year >= ${minyear} AND year <= ${maxyear} AND percent_votes <= ALL(
         SELECT percent_votes
         FROM Elections E2 
         WHERE E2.year = E1.year AND E2.state_abbreviation = E1.state_abbreviation
     )
     GROUP BY party_detailed
-    ORDER BY num_elections DESC
-    `
+    ORDER BY num_elections DESC`
     // user can only select the top n if they choose
     if (limit > 0){
         query = query + ` LIMIT ${limit}`
     }
+    //make the query and log the results
+    connection.query(query, function(error, results, fields){
+        if (error) {
+            console.log(error);
+            res.json({ error: error });
+        } else if (results) {
+            res.json({ results: results });
+        }
+    })
+}
+
+async function company_political(req, res) {
+    const year = req.query.year ? req.query.year : 2020;
+    query = `SELECT E.party_simplified, COUNT(DISTINCT C.name) AS num_companies
+        FROM Company C JOIN Elections E on C.state = E.state_abbreviation
+        WHERE E.won = 1 AND E.year = ${year}
+        GROUP BY E.party_simplified `;
     connection.query(query, function(error, results, fields){
         if (error) {
             console.log(error);
@@ -439,6 +476,7 @@ module.exports = {
   yelp_state,
   yelp_time,
   yelp_filter,
-  company_political,
-  elections_fewest
+  elections,
+  elections_fewest,
+  company_political
 };
