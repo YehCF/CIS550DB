@@ -379,6 +379,22 @@ async function yelp_filter(req, res) {
   }
 }
 
+async function company_political(req, res) {
+    const year = req.query.year ? req.query.year : 2020;
+    query = `SELECT E.party_simplified, COUNT(DISTINCT C.name) AS num_companies
+        FROM Company C JOIN Elections E on C.state = E.state_abbreviation
+        WHERE E.won = 1 AND E.year = ${year}
+        GROUP BY E.party_simplified `;
+    connection.query(query, function(error, results, fields){
+        if (error) {
+            console.log(error);
+            res.json({ error: error });
+        } else if (results) {
+            res.json({ results: results });
+        }
+    })
+}
+
 module.exports = {
   hello,
   stock,
@@ -388,5 +404,6 @@ module.exports = {
   yelp_categories,
   yelp_state,
   yelp_time,
-  yelp_filter
+  yelp_filter,
+  company_political
 };
