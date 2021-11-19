@@ -14,6 +14,8 @@ import { Row, Col, DatePicker, Space, Divider, Table } from "antd";
 
 import moment from "moment";
 
+import ReactLoading from "react-loading";
+
 import { DualAxes } from "@ant-design/charts";
 
 import USAMap from "react-usa-map";
@@ -175,6 +177,7 @@ class StockPage extends React.Component {
       industryStartDate: default_period[0],
       industryEndDate: default_period[1],
       industryThreshold: 0.5,
+      mapLoading: true,
     };
     this.handleCodeChange = this.handleCodeChange.bind(this);
     this.handleStateChange = this.handleStateChange.bind(this);
@@ -288,6 +291,7 @@ class StockPage extends React.Component {
   }
 
   updateStateIndustryResults() {
+    this.setState({ mapLoading: true });
     getStateIndustry(
       this.state.industryStartDate,
       this.state.industryEndDate,
@@ -308,6 +312,7 @@ class StockPage extends React.Component {
           ...newStateIndustryResults,
         },
       });
+      this.setState({ mapLoading: false });
     });
     console.log("inn");
   }
@@ -511,6 +516,22 @@ class StockPage extends React.Component {
                 alignItems: "center",
               }}
             >
+              {this.state.mapLoading && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    height: 0,
+                  }}
+                >
+                  <ReactLoading
+                    type={"spokes"}
+                    color={"blue"}
+                    height={25}
+                    width={25}
+                  />
+                </div>
+              )}
               <USAMap customize={this.state.stateIndustryResults} />
             </Container>
           </CardBody>
