@@ -395,6 +395,40 @@ async function company_political(req, res) {
     })
 }
 
+async function elections_fewest(req, res) {
+    const minyear = req.query.minyear ? req.query.minyear : 1976;
+    const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
+    const limit = req.query.limit ? req.query.limit : 0;
+    const state = req.query.state;
+    query = `SELECT party_detailed, COUNT(*) AS num_elections
+    FROM Elections E1
+    WHERE `;
+    //user can choose to only consider one state
+    if (state){
+        query = query + ` state_abbreviation = "${state}" AND `
+    }
+    query = query + `year >= ${minyear} AND year <= ${maxyear} AND percent_votes <= ALL(
+        SELECT percent_votes
+        FROM Elections E2 
+        WHERE E2.year = E1.year AND E2.state_abbreviation = E1.state_abbreviation
+    )
+    GROUP BY party_detailed
+    ORDER BY num_elections DESC
+    `
+    // user can only select the top n if they choose
+    if (limit > 0){
+        query = query + ` LIMIT ${limit}`
+    }
+    connection.query(query, function(error, results, fields){
+        if (error) {
+            console.log(error);
+            res.json({ error: error });
+        } else if (results) {
+            res.json({ results: results });
+        }
+    })
+}
+
 module.exports = {
   hello,
   stock,
@@ -405,5 +439,6 @@ module.exports = {
   yelp_state,
   yelp_time,
   yelp_filter,
-  company_political
+  company_political,
+  elections_fewest
 };
