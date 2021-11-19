@@ -20,6 +20,16 @@ const getAllStocks = async () => {
   return res.json();
 };
 
+const getAllIndustries = async () => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/industries`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
 const getStocks = async (
   code,
   state,
@@ -74,6 +84,7 @@ export {
   getCaseAndStock,
   getAllStocks,
   getAllStates,
+  getAllIndustries,
   getStocks,
   getStateVolatility,
   getStateCaseNorm,

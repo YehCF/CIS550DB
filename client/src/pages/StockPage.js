@@ -1,14 +1,21 @@
 import React from "react";
 import { Form, FormInput, FormGroup, Button } from "shards-react";
 
-import { Row, Col, DatePicker, Space, Divider, Table, Spin } from "antd";
+import { Row, Col, DatePicker, Space, Divider, Table } from "antd";
 
 import moment from "moment";
 
 import { DualAxes } from "@ant-design/charts";
 
+import USAMap from "react-usa-map";
+
 import MenuBar from "../components/MenuBar";
-import { getCaseAndStock, getAllStocks, getStocks } from "../fetcher";
+import {
+  getCaseAndStock,
+  getAllStocks,
+  getStocks,
+  getAllIndustries,
+} from "../fetcher";
 
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
@@ -135,6 +142,7 @@ class StockPage extends React.Component {
       selectedStockInfo: null,
       selectedStockSeries: [],
       tableLoading: true,
+      allIndustries: [],
     };
     this.handleCodeChange = this.handleCodeChange.bind(this);
     this.handleStateChange = this.handleStateChange.bind(this);
@@ -198,21 +206,21 @@ class StockPage extends React.Component {
     });
   }
 
+  initIndustries() {
+    getAllIndustries().then((res) => {
+      for (const obj of res.results) {
+        this.state.allIndustries.push(obj["industry"]);
+      }
+    });
+  }
+
   componentDidMount() {
+    this.initIndustries();
     this.setState({ tableLoading: true });
     getAllStocks().then((res) => {
       this.setState({ stockTableResults: res.results });
       this.setState({ tableLoading: false });
     });
-
-    // getCaseAndStock(
-    //   this.state.code,
-    //   this.state.usstate,
-    //   this.state.startDate,
-    //   this.state.endDate
-    // ).then((res) => {
-    //   this.setState({ stockResults: res.results });
-    // });
   }
 
   render() {
@@ -311,17 +319,15 @@ class StockPage extends React.Component {
           }}
           style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
         />
-        <Divider />
-
-        <div
-          style={{
-            width: "80vw",
-            height: "25vw",
-            margin: "auto auto",
-            marginTop: "5vh",
-          }}
-        >
-          {this.state.selectedStockInfo && (
+        {this.state.selectedStockInfo && (
+          <div
+            style={{
+              width: "80vw",
+              height: "25vw",
+              margin: "auto auto",
+              marginTop: "3vh",
+            }}
+          >
             <div>
               <h3>{this.state.selectedStockInfo["name"]}</h3>
               <h6>
@@ -334,8 +340,19 @@ class StockPage extends React.Component {
               </h6>
               <StockDualAxes data={this.state.selectedStockSeries} />
             </div>
-          )}
+          </div>
+        )}
+        <Divider />
+        {/* <div style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}>
+          <h2>State Perspective</h2>
+        </div> */}
+        {/* <div
+          id="map"
+          style={{ width: "70vw", margin: "auto auto", marginTop: "10vh" }}
+        >
+          <USAMap />
         </div>
+        <Divider /> */}
         <Divider />
       </div>
     );

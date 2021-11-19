@@ -106,6 +106,36 @@ async function stocks(req, res) {
 }
 
 /**
+ * Get all the unique industries
+ * Route: /industries
+ * Route Parameter(s) @param: None
+ * Query Parameter(s) @param: None
+ * Route Handler: industries(req, res)
+ * Return Type: JSON
+ * Return Parameters:
+ * {results (JSON array of {industry (string)})}
+ * Expected (Output) Behaviour:
+ * - Example: /industries
+ *
+ */
+async function industries(req, res) {
+  connection.query(
+    `
+    SELECT DISTINCT GICS AS industry
+    FROM Company
+    `,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
+    }
+  );
+}
+
+/**
  * Get the stocks with user-selected attributes
  * Route: /search/stocks
  * Route Parameter(s) @param: None
@@ -972,6 +1002,7 @@ module.exports = {
   hello,
   case_and_stock,
   states,
+  industries,
   stocks,
   search_stocks,
   state_volatility,
