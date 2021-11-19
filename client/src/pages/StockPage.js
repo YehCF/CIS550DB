@@ -1,5 +1,14 @@
 import React from "react";
-import { Form, FormInput, FormGroup, Button } from "shards-react";
+import {
+  Form,
+  FormInput,
+  FormGroup,
+  Button,
+  Card,
+  CardBody,
+  CardTitle,
+  Container,
+} from "shards-react";
 
 import { Row, Col, DatePicker, Space, Divider, Table } from "antd";
 
@@ -147,6 +156,7 @@ class StockPage extends React.Component {
     super(props);
 
     this.state = {
+      // for first section (explore stock vs. case)
       code: "",
       usstate: "",
       industry: "",
@@ -161,6 +171,10 @@ class StockPage extends React.Component {
       allIndustries: [],
       industryToColor: {},
       stateIndustryResults: {},
+      // for second section (explore state vs. industry)
+      industryStartDate: default_period[0],
+      industryEndDate: default_period[1],
+      industryThreshold: 0.5,
     };
     this.handleCodeChange = this.handleCodeChange.bind(this);
     this.handleStateChange = this.handleStateChange.bind(this);
@@ -169,6 +183,12 @@ class StockPage extends React.Component {
     this.handleCorrelationChange = this.handleCorrelationChange.bind(this);
     this.updateSearchResults = this.updateSearchResults.bind(this);
     this.updateSelectedStock = this.updateSelectedStock.bind(this);
+    this.handleIndustryCalendarChange =
+      this.handleIndustryCalendarChange.bind(this);
+    this.handleIndustryThresholdChange =
+      this.handleIndustryThresholdChange.bind(this);
+    this.updateStateIndustryResults =
+      this.updateStateIndustryResults.bind(this);
   }
 
   handleCodeChange(event) {
@@ -180,7 +200,7 @@ class StockPage extends React.Component {
   }
 
   handleCalendarChange(event) {
-    if (event) {
+    if (event[0] && event[1]) {
       this.setState({
         startDate: event[0].format(dateFormat).toString(),
         endDate: event[1].format(dateFormat).toString(),
@@ -210,7 +230,6 @@ class StockPage extends React.Component {
       this.setState({ stockTableResults: res.results });
       this.setState({ tableLoading: false });
     });
-    this.updateStateIndustryResults();
   }
 
   updateSelectedStock(rowRecord) {
@@ -256,11 +275,23 @@ class StockPage extends React.Component {
     });
   }
 
+  handleIndustryThresholdChange(event) {
+    this.setState({ industryThreshold: event.target.value });
+  }
+  handleIndustryCalendarChange(event) {
+    if (event[0] && event[1]) {
+      this.setState({
+        industryStartDate: event[0].format(dateFormat).toString(),
+        industryEndDate: event[1].format(dateFormat).toString(),
+      });
+    }
+  }
+
   updateStateIndustryResults() {
     getStateIndustry(
-      this.state.startDate,
-      this.state.endDate,
-      this.state.threshold
+      this.state.industryStartDate,
+      this.state.industryEndDate,
+      this.state.industryThreshold
     ).then((res) => {
       let newStateIndustryResults = {};
       for (const obj of res.results) {
@@ -278,6 +309,7 @@ class StockPage extends React.Component {
         },
       });
     });
+    console.log("inn");
   }
 
   componentDidMount() {
@@ -295,125 +327,194 @@ class StockPage extends React.Component {
     return (
       <div>
         <MenuBar />
-        <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
-          <Row>
-            <Col flex={2}>
-              <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                <label>Company Code</label>
-                <FormInput
-                  placeholder="e.g., AAPL"
-                  value={this.state.code}
-                  onChange={this.handleCodeChange}
-                />
-              </FormGroup>
-            </Col>
-            <Col flex={2}>
-              <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                <label>State</label>
-                <FormInput
-                  placeholder="e.g., CA"
-                  value={this.state.usstate}
-                  onChange={this.handleStateChange}
-                />
-              </FormGroup>
-            </Col>
-            <Col flex={2}>
-              <Space
-                direction="vertical"
-                size={1}
-                style={{ width: "20vw", margin: "5 auto" }}
+        <Card>
+          <CardBody>
+            <CardTitle>
+              <div
+                style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
               >
-                <label>Start to End Date</label>
-                <RangePicker
-                  defaultValue={[
-                    moment(default_period[0], dateFormat),
-                    moment(default_period[1], dateFormat),
-                  ]}
-                  format={dateFormat}
-                  onCalendarChange={this.handleCalendarChange}
-                />
-              </Space>
-            </Col>
-          </Row>
-          <Row>
-            <Col flex={2}>
-              <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                <label>Volatility Threshold</label>
-                <FormInput
-                  placeholder="e.g., 0.5"
-                  value={this.state.threshold}
-                  onChange={this.handleThresholdChange}
-                />
-              </FormGroup>
-            </Col>
-            <Col flex={3}>
-              <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                <label>Correlation Threshold</label>
-                <FormInput
-                  placeholder="e.g., 0.5"
-                  value={this.state.corr}
-                  onChange={this.handleCorrelationChange}
-                />
-              </FormGroup>
-            </Col>
-            <Col flex={2}>
-              <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                <Button
-                  style={{ marginTop: "3vh", margin: "5 auto" }}
-                  onClick={this.updateSearchResults}
+                <h3>Explore Stock & Case Correlations</h3>
+              </div>
+            </CardTitle>
+            <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
+              <Row>
+                <Col flex={2}>
+                  <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                    <label>Company Code</label>
+                    <FormInput
+                      placeholder="e.g., AAPL"
+                      value={this.state.code}
+                      onChange={this.handleCodeChange}
+                    />
+                  </FormGroup>
+                </Col>
+                <Col flex={2}>
+                  <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                    <label>State</label>
+                    <FormInput
+                      placeholder="e.g., CA"
+                      value={this.state.usstate}
+                      onChange={this.handleStateChange}
+                    />
+                  </FormGroup>
+                </Col>
+                <Col flex={2}>
+                  <Space
+                    direction="vertical"
+                    size={1}
+                    style={{ width: "20vw", margin: "5 auto" }}
+                  >
+                    <label>Period</label>
+                    <RangePicker
+                      defaultValue={[
+                        moment(default_period[0], dateFormat),
+                        moment(default_period[1], dateFormat),
+                      ]}
+                      format={dateFormat}
+                      onCalendarChange={this.handleCalendarChange}
+                    />
+                  </Space>
+                </Col>
+              </Row>
+              <Row>
+                <Col flex={2}>
+                  <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                    <label>Volatility Threshold</label>
+                    <FormInput
+                      placeholder="e.g., 0.5"
+                      value={this.state.threshold}
+                      onChange={this.handleThresholdChange}
+                    />
+                  </FormGroup>
+                </Col>
+                <Col flex={3}>
+                  <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                    <label>Correlation Threshold</label>
+                    <FormInput
+                      placeholder="e.g., 0.5"
+                      value={this.state.corr}
+                      onChange={this.handleCorrelationChange}
+                    />
+                  </FormGroup>
+                </Col>
+                <Col flex={2}>
+                  <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                    <Button
+                      style={{ marginTop: "3vh", margin: "5 auto" }}
+                      onClick={this.updateSearchResults}
+                    >
+                      Search
+                    </Button>
+                  </FormGroup>
+                </Col>
+              </Row>
+            </Form>
+            <Divider />
+            <Table
+              onRow={(record, rowIndex) => {
+                return {
+                  onClick: (event) => {
+                    this.updateSelectedStock(record);
+                  },
+                };
+              }}
+              columns={stockColumns}
+              dataSource={this.state.stockTableResults}
+              loading={this.state.tableLoading}
+              pagination={{
+                pageSizeOptions: [5, 10],
+                defaultPageSize: 5,
+                showQuickJumper: true,
+              }}
+              style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
+            />
+            {this.state.selectedStockInfo && (
+              <div>
+                <div
+                  style={{
+                    width: "80vw",
+                    margin: "auto auto",
+                  }}
                 >
-                  Search
-                </Button>
-              </FormGroup>
-            </Col>
-          </Row>
-        </Form>
-        <Divider />
-        <Table
-          onRow={(record, rowIndex) => {
-            return {
-              onClick: (event) => {
-                this.updateSelectedStock(record);
-              },
-            };
-          }}
-          columns={stockColumns}
-          dataSource={this.state.stockTableResults}
-          loading={this.state.tableLoading}
-          pagination={{
-            pageSizeOptions: [5, 10],
-            defaultPageSize: 5,
-            showQuickJumper: true,
-          }}
-          style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
-        />
-        {this.state.selectedStockInfo && (
-          <div>
-            <div
+                  <h3>{this.state.selectedStockInfo["name"]}</h3>
+                  <h6>
+                    Volatility: {this.state.selectedStockInfo["volatility"]}
+                  </h6>
+                  <h6>
+                    Pearson r: {this.state.selectedStockInfo["r_with_new_case"]}
+                  </h6>
+                  <StockDualAxes data={this.state.selectedStockSeries} />
+                </div>
+              </div>
+            )}
+            {/* <div>
+          <Divider />
+        </div> */}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <CardTitle>
+              <div
+                style={{ width: "80vw", margin: "auto auto", marginTop: "3vh" }}
+              >
+                <h3>Explore Volatile Industry</h3>
+              </div>
+            </CardTitle>
+            <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
+              <Row>
+                <Col flex={2}>
+                  <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                    <label>Volatility Threshold</label>
+                    <FormInput
+                      placeholder="e.g., 0.5"
+                      value={this.state.industryThreshold}
+                      onChange={this.handleIndustryThresholdChange}
+                    />
+                  </FormGroup>
+                </Col>
+                <Col flex={2}>
+                  <Space
+                    direction="vertical"
+                    size={1}
+                    style={{ width: "20vw", margin: "5 auto" }}
+                  >
+                    <label>Period</label>
+                    <RangePicker
+                      defaultValue={[
+                        moment(default_period[0], dateFormat),
+                        moment(default_period[1], dateFormat),
+                      ]}
+                      format={dateFormat}
+                      onCalendarChange={this.handleIndustryCalendarChange}
+                    />
+                  </Space>
+                </Col>
+                <Col flex={2}>
+                  <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                    <Button
+                      style={{ marginTop: "3vh", margin: "5 auto" }}
+                      onClick={this.updateStateIndustryResults}
+                    >
+                      Apply
+                    </Button>
+                  </FormGroup>
+                </Col>
+              </Row>
+            </Form>
+            <Container
+              id="map"
               style={{
                 width: "80vw",
                 margin: "auto auto",
+                marginTop: "5vh",
+                alignItems: "center",
               }}
             >
-              <h3>{this.state.selectedStockInfo["name"]}</h3>
-              <h6>Volatility: {this.state.selectedStockInfo["volatility"]}</h6>
-              <h6>
-                Pearson r: {this.state.selectedStockInfo["r_with_new_case"]}
-              </h6>
-              <StockDualAxes data={this.state.selectedStockSeries} />
-            </div>
-            <Divider />
-          </div>
-        )}
-        <div
-          id="map"
-          style={{ width: "80vw", margin: "auto auto", marginTop: "3vh" }}
-        >
-          <h3>State vs. Volatile Industry </h3>
-          <div>
-            <USAMap customize={this.state.stateIndustryResults} />
-          </div>
-        </div>
+              <USAMap customize={this.state.stateIndustryResults} />
+            </Container>
+          </CardBody>
+        </Card>
       </div>
     );
   }
