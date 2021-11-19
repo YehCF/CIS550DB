@@ -123,12 +123,13 @@ var yelp_period;
 /**
  * Get time range when initialize
  */
-const getTime = () =>{
+const getTime = () => {
   connection.query(
     `
     SELECT DATE_FORMAT(MIN(review_date), "%Y-%m-%d") AS start_date, DATE_FORMAT(MAX(review_date), "%Y-%m-%d") AS end_date
     FROM Review;
-    `,function (error, results) {
+    `,
+    function (error, results) {
       if (error) {
         console.log(error);
       } else if (results) {
@@ -140,7 +141,7 @@ const getTime = () =>{
       }
     }
   );
-}
+};
 getTime();
 
 //Route5
@@ -155,11 +156,13 @@ Examples:
   http://localhost:8080/yelp?start=2020-03-01&end=2020-03-31
  */
 async function yelp_map(req, res) {
-  const startDate = req.query.start ? req.query.start : yelp_period[0].start_date;
+  const startDate = req.query.start
+    ? req.query.start
+    : yelp_period[0].start_date;
   const endDate = req.query.end ? req.query.end : yelp_period[0].end_date;
   connection.query(
     `
-    SELECT s.abbreviation AS state, IFNULL(review_count, 0)
+    SELECT s.abbreviation AS state, IFNULL(review_count, 0) AS review_count
     FROM State s LEFT JOIN
     (
       SELECT state, COUNT(b.id) AS review_count
@@ -263,34 +266,61 @@ Examples:
   http://localhost:8080/yelp/filter?state=FL
   http://localhost:8080/yelp/filter?categories=Apartments
   http://localhost:8080/yelp/filter?state=FL&categories=Apartments
+  http://localhost:8080/yelp/filter?state=FL&categories=Apartments&start=2020-03-01&end=2020-03-31
 */
 async function yelp_filter(req, res) {
-  const startDate = req.query.start ? req.query.start : yelp_period[0].start_date;
+  const startDate = req.query.start
+    ? req.query.start
+    : yelp_period[0].start_date;
   const endDate = req.query.end ? req.query.end : yelp_period[0].end_date;
   const state = req.query.state;
   const categories = req.query.categories;
 
-  if(state && categories){  //state and categories is not null
+  if (state && categories) {
+    //state and categories is not null
     connection.query(
       `
       WITH match_categories AS
-      (
-          SELECT bc.business_id AS id
-          FROM(SELECT business_id
-              FROM Business_Categories
-              WHERE categories = '${categories}'
-            ) bc
-          JOIN Business b
-          ON bc.business_id = b.id
-          WHERE b.state = '${state}'
-      )
-      SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
-      FROM Review r JOIN
-      match_categories b
-      ON r.business_id=b.id
-      WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY review_date
-      ORDER BY review_date;`,
+	(
+	  SELECT business_id AS id
+	  FROM Business_Categories
+	  WHERE categories = '${categories}'
+	), match_state AS
+	(
+	  SELECT b.id
+	  FROM Business b JOIN match_categories mc
+	  ON b.id = mc.id
+	  WHERE state = '${state}'
+	), covid_cases AS
+	(
+	  SELECT submission_date, SUM(new_case) AS new_case
+	  FROM Day D
+	  WHERE submission_date BETWEEN '${startDate}' AND '${endDate}'
+	  AND state = '${state}'
+	  GROUP BY submission_date
+	), review_business AS
+	(
+	  SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
+	  FROM Review r JOIN
+	  match_state b
+	  ON r.business_id=b.id
+	  WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+	  GROUP BY review_date
+	)
+	SELECT *
+	FROM (
+	     SELECT average_star, review_count, review_date, IFNULL(new_case, 0) AS new_case
+	     FROM review_business rb LEFT JOIN covid_cases cc
+	     ON cc.submission_date = rb.review_date
+	 )a
+	 UNION ALL
+	(
+	     SELECT IFNULL(average_star, 0) AS average_star, IFNULL(review_count, 0) AS review_count, submission_date AS review_date, new_case
+	     FROM review_business rb RIGHT JOIN covid_cases cc
+	     ON cc.submission_date = rb.review_date
+	     WHERE rb.review_date IS NULL
+	 )
+	ORDER BY review_date;`,
       function (error, results, fields) {
         if (error) {
           console.log(error);
@@ -302,20 +332,44 @@ async function yelp_filter(req, res) {
         }
       }
     );
-  }else if(state){          //state is not null
+  } else if (state) {
+    //state is not null
     connection.query(
       `
-      SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
-      FROM Review r JOIN
-          (
-              SELECT id
-              FROM Business
-              WHERE state = '${state}'
-          )b
-      ON r.business_id=b.id
-      WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY review_date
-      ORDER BY review_date;
+      WITH match_state AS
+	(
+	  SELECT id
+	  FROM Business
+	  WHERE state = '${state}'
+	), covid_cases AS
+	(
+	  SELECT submission_date, SUM(new_case) AS new_case
+	  FROM Day D
+	  WHERE submission_date BETWEEN '${startDate}' AND '${endDate}'
+	  AND state = '${state}'
+	  GROUP BY submission_date
+	), review_business AS
+	(
+	  SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
+	  FROM Review r JOIN match_state b
+	  ON r.business_id=b.id
+	  WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+	  GROUP BY review_date
+	)
+	SELECT *
+	FROM (
+	     SELECT average_star, review_count, review_date, IFNULL(new_case, 0) AS new_case
+	     FROM review_business rb LEFT JOIN covid_cases cc
+	     ON cc.submission_date = rb.review_date
+	 )a
+	 UNION ALL
+	(
+	     SELECT IFNULL(average_star, 0) AS average_star, IFNULL(review_count, 0) AS review_count, submission_date AS review_date, new_case
+	     FROM review_business rb RIGHT JOIN covid_cases cc
+	     ON cc.submission_date = rb.review_date
+	     WHERE rb.review_date IS NULL
+	 )
+	ORDER BY review_date;
      `,
       function (error, results, fields) {
         if (error) {
@@ -328,22 +382,44 @@ async function yelp_filter(req, res) {
         }
       }
     );
-  }else if(categories){     //categories is not null
+  } else if (categories) {
+    //categories is not null
     connection.query(
       `
       WITH match_categories AS
-      (
-          SELECT business_id AS id
-          FROM Business_Categories
-          WHERE categories = '${categories}'
-      )
-      SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
-      FROM Review r JOIN
-      match_categories b
-      ON r.business_id=b.id
-      WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY review_date
-      ORDER BY review_date;
+	(
+	  SELECT business_id AS id
+	  FROM Business_Categories
+	  WHERE categories = '${categories}'
+	), covid_cases AS
+	(
+	  SELECT submission_date, SUM(new_case) AS new_case
+	  FROM Day D
+	  WHERE submission_date BETWEEN '${startDate}' AND '${endDate}'
+	  GROUP BY submission_date
+	), review_business AS
+	(
+	  SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
+	  FROM Review r JOIN
+	  match_categories b
+	  ON r.business_id=b.id
+	  WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+	  GROUP BY review_date
+	)
+	SELECT *
+	FROM (
+	     SELECT average_star, review_count, review_date, IFNULL(new_case, 0) AS new_case
+	     FROM review_business rb LEFT JOIN covid_cases cc
+	     ON cc.submission_date = rb.review_date
+	 )a
+	 UNION ALL
+	(
+	     SELECT IFNULL(average_star, 0) AS average_star, IFNULL(review_count, 0) AS review_count, submission_date AS review_date, new_case
+	     FROM review_business rb RIGHT JOIN covid_cases cc
+	     ON cc.submission_date = rb.review_date
+	     WHERE rb.review_date IS NULL
+	 )
+	ORDER BY review_date;
      `,
       function (error, results, fields) {
         if (error) {
@@ -356,14 +432,38 @@ async function yelp_filter(req, res) {
         }
       }
     );
-  }else{                    //both state and categories is null
+  } else {
+    //both state and categories is null
     connection.query(
       `
-      SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
-      FROM Review r
-      WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
-      GROUP BY review_date
-      ORDER BY review_date;
+      WITH covid_cases AS
+	(
+	  SELECT submission_date, SUM(new_case) AS new_case
+	  FROM Day D
+	  WHERE D.submission_date BETWEEN '${startDate}' AND '${endDate}'
+	  GROUP BY submission_date
+	),
+	review_count AS
+	(
+	  SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
+	  FROM Review r
+	  WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+	  GROUP BY review_date
+	)
+	SELECT *
+	FROM (
+	     SELECT IFNULL(average_star, 0) AS average_star, IFNULL(review_count, 0) AS review_count, submission_date AS review_date, new_case
+	     FROM covid_cases D LEFT Join review_count r
+	     ON D.submission_date = r.review_date
+	 )a
+	UNION ALL
+	(
+	    SELECT average_star, review_count, review_date, IFNULL(D.new_case, 0) AS new_case
+	    FROM covid_cases D RIGHT Join review_count r
+	    ON D.submission_date = r.review_date
+	    WHERE D.submission_date IS NULL
+	)
+	ORDER BY review_date;
      `,
       function (error, results, fields) {
         if (error) {
