@@ -18,8 +18,8 @@ app.get("/hello", routes.hello);
 app.get("/states", routes.states);
 
 // Route for Stock
-app.get("/stock", routes.stocks);
-app.get("/search/stock", routes.search_stocks);
+app.get("/stocks", routes.stocks);
+app.get("/search/stocks", routes.search_stocks);
 app.get("/state/industry", routes.state_industry);
 app.get("/case/stock", routes.case_and_stock);
 

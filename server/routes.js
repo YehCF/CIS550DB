@@ -83,10 +83,10 @@ async function stocks(req, res) {
         GROUP BY T.code
     )
     SELECT S.code AS code, C.name AS name, C.GICS AS industry,
-    (MAX(S.close) - MIN(S.close)) / MIN(S.close) AS volatility,
+    CAST((MAX(S.close) - MIN(S.close)) / MIN(S.close) AS decimal(5, 3)) AS volatility,
     MIN(S.close) AS min_price, MAX(S.close) AS max_price,
     MIN(S.volume) AS min_volume, MAX(S.volume) AS max_volume,
-    MAX(Corr.r) AS r_with_new_case
+    CAST(MAX(Corr.r) AS decimal(4, 3)) AS r_with_new_case
     FROM Stock S 
         JOIN Company C 
           on S.code = C.code
@@ -137,7 +137,7 @@ async function search_stocks(req, res) {
     corr: ["Corr.r", ">="],
   };
   for (const [attr, predicate] of Object.entries(filters)) {
-    if (eval("req.query." + attr)) {
+    if (eval("req.query." + attr) && eval("req.query." + attr) != "null") {
       const value = eval("req.query." + attr);
       if (predicate[1] == "LIKE") {
         clause.push(`${predicate[0]} ${predicate[1]} '%${value}%'`);
@@ -146,30 +146,29 @@ async function search_stocks(req, res) {
       }
     }
   }
+
   let where_clause = ``;
   if (clause.length > 0) {
     where_clause = `WHERE ${clause.join(" AND ")}`;
   }
   // clause for Volatility (use HAVING)
   let have_clause = ``;
-  if (req.query.threshold) {
+  if (req.query.threshold && req.query.threshold != "null") {
     have_clause = `HAVING ((MAX(S.close) - MIN(S.close)) / MIN(S.close)) >= '${req.query.threshold}'`;
   }
   // subquery - where clause for correlation
   let corr_where_clause = ``;
   let corr_periods = [];
-  if (req.query.start)
-    for (const [attr, predicate] of Object.entries({
-      start: ["S.date", ">="],
-      end: ["S.date", "<="],
-    })) {
-      if (eval("req.query." + attr)) {
-        const value = eval("req.query." + attr);
-        corr_periods.push(`${predicate[0]} ${predicate[1]} '${value}'`);
-      }
+  for (const [attr, predicate] of Object.entries({
+    start: ["S.date", ">="],
+    end: ["S.date", "<="],
+  })) {
+    if (eval("req.query." + attr) && eval("req.query." + attr) != "null") {
+      const value = eval("req.query." + attr);
+      corr_periods.push(`${predicate[0]} ${predicate[1]} '${value}'`);
     }
+  }
   if (corr_periods.length > 0) {
-    console.log("Got ", corr_periods);
     corr_where_clause = `WHERE ${corr_periods.join(" AND ")}`;
   }
   // run query
@@ -198,10 +197,10 @@ async function search_stocks(req, res) {
         GROUP BY T.code
     )
     SELECT S.code AS code, C.name AS name, C.GICS AS industry,
-    (MAX(S.close) - MIN(S.close)) / MIN(S.close) AS volatility,
+    CAST((MAX(S.close) - MIN(S.close)) / MIN(S.close) AS decimal(5, 3)) AS volatility,
     MIN(S.close) AS min_price, MAX(S.close) AS max_price,
     MIN(S.volume) AS min_volume, MAX(S.volume) AS max_volume,
-    MAX(Corr.r) AS r_with_new_case
+    CAST(MAX(Corr.r) AS decimal(4, 3)) AS r_with_new_case
     FROM Stock S 
       JOIN Company C 
         on S.code = C.code 
@@ -240,7 +239,7 @@ async function case_and_stock(req, res) {
   const state = req.query.state;
   const start = req.query.start;
   const end = req.query.end;
-  if (state) {
+  if (state && !isNaN(state)) {
     connection.query(
       `
       SELECT DATE_FORMAT(D.submission_date, "%m-%d-%Y") AS date, S.close AS price, D.new_case AS new_case
@@ -361,7 +360,7 @@ async function state_volatility(req, res) {
       WHERE date >= '${start}' AND date <= '${end}'
       GROUP BY code
     )
-    SELECT C.state, AVG(V.volatility) AS volatility
+    SELECT C.state, CAST(AVG(V.volatility) AS decimal(5, 3)) AS volatility
     FROM Volatility V JOIN Company C ON V.code = C.code
     WHERE C.state IS NOT NULL
     GROUP BY C.state;

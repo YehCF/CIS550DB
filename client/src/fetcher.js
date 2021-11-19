@@ -10,6 +10,37 @@ const getAllStates = async () => {
   return res.json();
 };
 
+const getAllStocks = async () => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/stocks`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
+const getStocks = async (
+  code,
+  state,
+  start,
+  end,
+  industry,
+  threshold,
+  corr
+) => {
+  console.log(
+    `http://${config.server_host}:${config.server_port}/search/stocks?code=${code}&state=${state}&start=${start}&end=${end}&industry=${industry}&threshold=${threshold}&corr=${corr}`
+  );
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/search/stocks?code=${code}&state=${state}&start=${start}&end=${end}&industry=${industry}&threshold=${threshold}&corr=${corr}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
 const getCaseAndStock = async (code, state, start, end) => {
   var res = await fetch(
     `http://${config.server_host}:${config.server_port}/case/stock?code=${code}&state=${state}&start=${start}&end=${end}`,
@@ -39,4 +70,11 @@ const getStateCaseNorm = async (start, end) => {
   );
   return res.json();
 };
-export { getCaseAndStock, getAllStates, getStateVolatility, getStateCaseNorm };
+export {
+  getCaseAndStock,
+  getAllStocks,
+  getAllStates,
+  getStocks,
+  getStateVolatility,
+  getStateCaseNorm,
+};
