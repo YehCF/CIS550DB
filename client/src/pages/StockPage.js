@@ -15,11 +15,26 @@ import {
   getAllStocks,
   getStocks,
   getAllIndustries,
+  getAllStates,
+  getStateIndustry,
 } from "../fetcher";
+
+import * as d3 from "d3";
 
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
 const default_period = ["2020-01-01", "2020-12-31"];
+
+const nIndustryColors = 11;
+const colorScaler = d3
+  .scaleLinear()
+  .range(["#e8e8e8", "#5ac8c8"])
+  .domain([0, nIndustryColors - 1]);
+let industryColorArray = [];
+for (let i = 0; i < nIndustryColors; i++) {
+  industryColorArray[i] = colorScaler(i);
+}
+console.log(industryColorArray);
 
 const stockColumns = [
   {
@@ -83,6 +98,7 @@ const StockDualAxes = (data) => {
     data: [data.data, data.data],
     xField: "date",
     yField: ["price", "new_case"],
+    width: "100px",
     geometryOptions: [
       {
         geometry: "line",
@@ -134,8 +150,8 @@ class StockPage extends React.Component {
       code: "",
       usstate: "",
       industry: "",
-      threshold: "",
-      corr: "",
+      threshold: 0.0,
+      corr: 0.0,
       startDate: default_period[0],
       endDate: default_period[1],
       stockTableResults: [],
@@ -143,6 +159,8 @@ class StockPage extends React.Component {
       selectedStockSeries: [],
       tableLoading: true,
       allIndustries: [],
+      industryToColor: {},
+      stateIndustryResults: {},
     };
     this.handleCodeChange = this.handleCodeChange.bind(this);
     this.handleStateChange = this.handleStateChange.bind(this);
@@ -192,6 +210,7 @@ class StockPage extends React.Component {
       this.setState({ stockTableResults: res.results });
       this.setState({ tableLoading: false });
     });
+    this.updateStateIndustryResults();
   }
 
   updateSelectedStock(rowRecord) {
@@ -207,20 +226,69 @@ class StockPage extends React.Component {
   }
 
   initIndustries() {
-    getAllIndustries().then((res) => {
+    getAllIndustries()
+      .then((res) => {
+        for (const obj of res.results) {
+          this.state.allIndustries.push(obj["industry"]);
+        }
+      })
+      .then((res) => {
+        // map color
+        for (let i = 0; i < this.state.allIndustries.length; i++) {
+          this.state.industryToColor[this.state.allIndustries[i]] =
+            industryColorArray[i];
+        }
+      });
+  }
+
+  initStateIndustryResults() {
+    getAllStates().then((res) => {
+      // this.state.stateIndustryResults
+      // format: {"NY": {"industry": (string)}, "CA": {"industry": (string)}, ...}
       for (const obj of res.results) {
-        this.state.allIndustries.push(obj["industry"]);
+        if (obj["state"]) {
+          this.state.stateIndustryResults[obj["state"]] = {
+            industry: this.state.allIndustries[0],
+            fill: this.state.industryToColor[this.state.allIndustries[0]],
+          };
+        }
       }
     });
   }
 
+  updateStateIndustryResults() {
+    getStateIndustry(
+      this.state.startDate,
+      this.state.endDate,
+      this.state.threshold
+    ).then((res) => {
+      let newStateIndustryResults = {};
+      for (const obj of res.results) {
+        if (obj["state"]) {
+          newStateIndustryResults[obj["state"]] = {
+            industry: obj["industry"],
+            fill: this.state.industryToColor[obj["industry"]],
+          };
+        }
+      }
+      this.setState({
+        stateIndustryResults: {
+          ...this.state.stateIndustryResults,
+          ...newStateIndustryResults,
+        },
+      });
+    });
+  }
+
   componentDidMount() {
-    this.initIndustries();
     this.setState({ tableLoading: true });
     getAllStocks().then((res) => {
       this.setState({ stockTableResults: res.results });
       this.setState({ tableLoading: false });
     });
+    this.initIndustries();
+    this.initStateIndustryResults();
+    this.updateStateIndustryResults();
   }
 
   render() {
@@ -320,40 +388,32 @@ class StockPage extends React.Component {
           style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
         />
         {this.state.selectedStockInfo && (
-          <div
-            style={{
-              width: "80vw",
-              height: "25vw",
-              margin: "auto auto",
-              marginTop: "3vh",
-            }}
-          >
-            <div>
+          <div>
+            <div
+              style={{
+                width: "80vw",
+                margin: "auto auto",
+              }}
+            >
               <h3>{this.state.selectedStockInfo["name"]}</h3>
+              <h6>Volatility: {this.state.selectedStockInfo["volatility"]}</h6>
               <h6>
-                Volatility:{" "}
-                {this.state.selectedStockInfo["volatility"].toFixed(3)}
-              </h6>
-              <h6>
-                Pearson r:{" "}
-                {this.state.selectedStockInfo["r_with_new_case"].toFixed(3)}
+                Pearson r: {this.state.selectedStockInfo["r_with_new_case"]}
               </h6>
               <StockDualAxes data={this.state.selectedStockSeries} />
             </div>
+            <Divider />
           </div>
         )}
-        <Divider />
-        {/* <div style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}>
-          <h2>State Perspective</h2>
-        </div> */}
-        {/* <div
+        <div
           id="map"
-          style={{ width: "70vw", margin: "auto auto", marginTop: "10vh" }}
+          style={{ width: "80vw", margin: "auto auto", marginTop: "3vh" }}
         >
-          <USAMap />
+          <h3>State vs. Volatile Industry </h3>
+          <div>
+            <USAMap customize={this.state.stateIndustryResults} />
+          </div>
         </div>
-        <Divider /> */}
-        <Divider />
       </div>
     );
   }

@@ -71,6 +71,19 @@ const getStateVolatility = async (start, end) => {
   return res.json();
 };
 
+const getStateIndustry = async (start, end, threshold) => {
+  console.log(
+    `http://${config.server_host}:${config.server_port}/state/industry?start=${start}&end=${end}&threshold=${threshold}`
+  );
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/state/industry?start=${start}&end=${end}&threshold=${threshold}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
 const getStateCaseNorm = async (start, end) => {
   var res = await fetch(
     `http://${config.server_host}:${config.server_port}/state/case/norm?start=${start}&end=${end}`,
@@ -88,4 +101,5 @@ export {
   getStocks,
   getStateVolatility,
   getStateCaseNorm,
+  getStateIndustry,
 };
