@@ -33,7 +33,19 @@ app.get("/yelp/time", routes.yelp_time);
 //Route 9
 app.get("/yelp/filter", routes.yelp_filter);
 
+/*Election Routes*/
+// Route 10
+app.get("/elections", routes.elections);
+// Route 11
+app.get("/elections/fewest", routes.elections_fewest);
+// Route 12
+app.get("/elections/most_of_party", routes.elections_most_party);
+// Route 13
+app.get("/elections/populous", routes.elections_populous);
 
+/*Combination Routes*/
+// Route 14
+app.get("/stock/political", routes.company_political);
 
 app.listen(config.server_port, () => {
   console.log(
