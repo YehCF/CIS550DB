@@ -41,7 +41,6 @@ app.get("/elections/fewest", routes.elections_fewest);
 // Route 12
 app.get("/elections/most_of_party", routes.elections_most_party);
 // Route 13
-//TODO
 app.get("/elections/populous", routes.elections_populous);
 
 /*Combination Routes*/

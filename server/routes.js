@@ -494,16 +494,67 @@ async function elections_most_party(req, res){
     })
 }
 
-async function elections_populous(req, res){
 
+/**
+ * Route 13
+ * Return the counts of candidates sent to the senate by the most and least populous states
+ * @param minyear the low end of the range of years to consider (default = beginning of data)
+ * @param maxyear the high end of the range of years to consider (default = 2020)
+ * @param limit the number of high and low population states to consider (default = 5)
+ * */
+async function elections_populous(req, res){
+    //get the parameters, using defaults where not specified
+    const minyear = req.query.minyear ? req.query.minyear : 1976;
+    const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
+    const limit = req.query.limit ? req.query.limit : 5;
+    // write out the query
+    query = ` WITH most_populous_states AS (
+        SELECT abbreviation 
+        FROM State 
+        ORDER BY population DESC 
+        LIMIT ${limit}
+    ),
+    least_populous_states AS (
+        SELECT abbreviation
+        FROM State 
+        ORDER BY population
+        LIMIT ${limit}
+    )
+    SELECT M.party_detailed, most_populous_count, least_populous_count 
+    FROM (SELECT party_detailed, COUNT(*) AS most_populous_count
+        FROM most_populous_states M JOIN Elections E on M.abbreviation = E.state_abbreviation
+        WHERE E.won = 1 AND E.year >= ${minyear} and E.year <= ${maxyear}
+        GROUP BY party_detailed) M
+        LEFT OUTER JOIN (
+        SELECT party_detailed, COUNT(*) AS least_populous_count 
+        FROM least_populous_states M JOIN Elections E on M.abbreviation = E.state_abbreviation
+        WHERE E.won = 1 AND E.year <= ${maxyear} AND E.year >= ${minyear}
+        GROUP BY party_detailed) L
+        ON M.party_detailed = L.party_detailed
+    `
+    //execute the query and return the results
+    connection.query(query, function(error, results, fields){
+        if (error) {
+            console.log(error);
+            res.json({ error: error });
+        } else if (results) {
+            res.json({ results: results });
+        }
+    })
 }
 
+/**Route 14
+ * Are more companies in blue or red states in a given year?
+ * @param : year in which to conduct the calculation*/
 async function company_political(req, res) {
+    //get the user parameters
     const year = req.query.year ? req.query.year : 2020;
-    query = `SELECT E.party_simplified, COUNT(DISTINCT C.name) AS num_companies
+    // write the query
+    query = `SELECT E.party_detailed, COUNT(DISTINCT C.name) AS num_companies
         FROM Company C JOIN Elections E on C.state = E.state_abbreviation
         WHERE E.won = 1 AND E.year = ${year}
-        GROUP BY E.party_simplified `;
+        GROUP BY E.party_detailed `;
+    //execute the query and return the results
     connection.query(query, function(error, results, fields){
         if (error) {
             console.log(error);
