@@ -38,10 +38,14 @@ app.get("/yelp/filter", routes.yelp_filter);
 app.get("/elections", routes.elections);
 // Route 11
 app.get("/elections/fewest", routes.elections_fewest);
-// app.get("/elections/most_of_party")
-// app.get("/elections/populous")
+// Route 12
+app.get("/elections/most_of_party", routes.elections_most_party);
+// Route 13
+//TODO
+app.get("/elections/populous", routes.elections_populous);
 
 /*Combination Routes*/
+// Route 14
 app.get("/stock/political", routes.company_political);
 
 app.listen(config.server_port, () => {
