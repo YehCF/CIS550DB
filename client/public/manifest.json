@@ -1,0 +1,15 @@
+{
+  "short_name": "Polls, Pandemics and Possibly More!",
+  "name": "CIS 550 - Polls, Pandemics and Possibly More!",
+  "icons": [
+    {
+      "src": "football.svg",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

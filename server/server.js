@@ -14,14 +14,21 @@ app.use(
 // Route 1 - register as GET
 app.get("/hello", routes.hello);
 
-// Route 2
-app.get("/stock", routes.stock);
-// Route 3
-app.get("/stock/popular", routes.stock_popular);
-// Route 4
-app.get("/state/stock", routes.state_stock);
+// Route for State
+app.get("/states", routes.states);
 
-/*Yelp Route*/ 
+// Route for Stock
+app.get("/stocks", routes.stocks);
+app.get("/industries", routes.industries);
+app.get("/search/stocks", routes.search_stocks);
+app.get("/state/industry", routes.state_industry);
+app.get("/case/stock", routes.case_and_stock);
+
+// Route for StateMap (for Testing)
+app.get("/state/volatility", routes.state_volatility);
+app.get("/state/case/norm", routes.state_case_norm);
+
+/*Yelp Route*/
 // Route 5
 app.get("/yelp", routes.yelp_map);
 //Route 6
