@@ -379,6 +379,28 @@ async function yelp_filter(req, res) {
   }
 }
 
+// ** COVID ROUTES **
+async function covid_gen(req, res) {
+
+}
+
+async function covid_state(req, res) {
+  
+}
+
+async function covid_season(req, res) {
+  
+}
+
+async function covid_comparison(req, res) {
+}
+  
+async function covid_filter(req, res) {
+}
+  
+
+
+
 module.exports = {
   hello,
   stock,
@@ -388,5 +410,10 @@ module.exports = {
   yelp_categories,
   yelp_state,
   yelp_time,
-  yelp_filter
+  yelp_filter,
+  covid_gen,
+  covid_state,
+  covid_season,
+  covid_comparison,
+  covid_filter
 };
