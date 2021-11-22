@@ -93,6 +93,41 @@ const getStateCaseNorm = async (start, end) => {
   );
   return res.json();
 };
+
+const getYelpMap = async (start, end) => {
+  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp?start=${start}&end=${end}`, {
+      method: 'GET',
+  })
+  return res.json()
+}
+
+const getYelpCategories = async () => {
+  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp/categories`, {
+      method: 'GET',
+  })
+  return res.json()
+}
+
+const getYelpState = async () => {
+  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp/state`, {
+      method: 'GET',
+  })
+  return res.json()
+}
+
+const getYelpTime = async () => {
+  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp/time`, {
+      method: 'GET',
+  })
+  return res.json()
+}
+
+const getYelpFilter = async (start, end, state, categories) => {
+  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp/filter?start=${start}&end=${end}&state=${state}&categories=${categories}`, {
+      method: 'GET',
+  })
+  return res.json()
+}
 export {
   getCaseAndStock,
   getAllStocks,
@@ -102,4 +137,9 @@ export {
   getStateVolatility,
   getStateCaseNorm,
   getStateIndustry,
+  getYelpMap,
+  getYelpCategories,
+  getYelpState,
+  getYelpTime,
+  getYelpFilter
 };
