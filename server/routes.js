@@ -560,7 +560,8 @@ async function yelp_state(req, res) {
   connection.query(
     `
     SELECT DISTINCT state
-    FROM Business;`,
+    FROM Business
+    ORDER BY state;`,
     function (error, results, fields) {
       if (error) {
         console.log(error);
