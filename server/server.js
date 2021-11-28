@@ -33,8 +33,7 @@ app.get("/yelp/time", routes.yelp_time);
 //Route 9
 app.get("/yelp/filter", routes.yelp_filter);
 
-/*COVID Route*/ 
-
+/*COVID Routes*/ 
 // gets general covid data across country 
 app.get("/covid", routes.covid_gen);
 
@@ -45,10 +44,10 @@ app.get("/covid/state", routes.covid_state);
 app.get("/covid/season", routes.covid_season);
 
 // takes in two states, and produces data for 
-app.get("/covid/comparison", routes.yelp_categories);
+app.get("/covid/comparison", routes.covid_comp);
 
 // takes in a timeframe, and an optional state list, produces covid stats 
-app.get("/covid/filter", routes.yelp_categories);
+app.get("/covid/filter", routes.covid_filter);
 
 
 
