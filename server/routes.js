@@ -999,6 +999,230 @@ async function company_political(req, res) {
   });
 }
 
+// ** COVID ROUTES **
+
+/*
+Examples:
+  http://localhost:8080/covid/gen
+*/
+async function covid_gen(req, res) {
+  connection.query(
+    `SELECT
+      sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
+      Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
+      sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
+      Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
+    FROM Day`,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
+    }
+  );
+}
+
+/*
+Examples:
+  http://localhost:8080/covid?state=CA
+  http://localhost:8080/covid?state=NM
+  http://localhost:8080/covid?state=WA
+*/
+async function covid_state(req, res) {
+  const state = req.query.state;
+
+  if(!state) {
+    // defaults to california
+    connection.query(
+      `SELECT
+        sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
+        Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
+        sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
+        Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
+        WHERE state = 'CA'
+      FROM Day`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+        }
+      }
+    );
+  } else {
+    connection.query(
+      `SELECT
+        sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
+        Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
+        sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
+        Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
+        WHERE state = '${state}'
+      FROM Day`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+        }
+      }
+    );
+  }
+
+}
+
+/*
+Examples:
+  http://localhost:8080/covid/season/
+  http://localhost:8080/covid/season/fall
+  http://localhost:8080/covid/season/summer
+  http://localhost:8080/covid/gen/spring
+*/
+async function covid_season(req, res) {
+  const season = req.query.season;
+  // defaults to summer
+  if(season == null || season == "summer") {
+    connection.query(
+      `WITH T1 AS (SELECT SUM(tot_cases) as 'SummerCases2020', state
+      FROM Day
+      WHERE submission_date LIKE (submission_date LIKE '2020-06%')
+      OR (submission_date LIKE '2020-07%')
+      OR (submission_date LIKE '2020-08%')
+      GROUP BY state),
+      T2 AS (SELECT SUM(tot_cases) as 'SummerCases2021', state
+      FROM Day
+      WHERE submission_date LIKE (submission_date LIKE '2021-06%')
+      OR (submission_date LIKE '2021-07%')
+      OR (submission_date LIKE '2021-08%')
+      GROUP BY state)
+      ,T3 AS (SELECT name, abbreviation FROM State)
+      SELECT T3.name, SummerCases2020, SummerCases2021
+      FROM (T1 JOIN T2 ON T1.state = T2.state JOIN T3 on T3.abbreviation = T2.state)
+      ORDER BY SummerCases2020 DESC`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+        }
+      }
+    );
+  } else if(season == "spring") {
+    connection.query(
+      `WITH T1 AS (SELECT SUM(tot_cases) as 'SpringCases2020', state
+      FROM Day
+      WHERE submission_date LIKE (submission_date LIKE '2020-03%')
+      OR (submission_date LIKE '2020-04%')
+      OR (submission_date LIKE '2020-05%')
+      GROUP BY state),
+      T2 AS (SELECT SUM(tot_cases) as 'SpringCases2021', state
+      FROM Day
+      WHERE submission_date LIKE (submission_date LIKE '2021-03%')
+      OR (submission_date LIKE '2021-04%')
+      OR (submission_date LIKE '2021-05%')
+      GROUP BY state)
+      ,T3 AS (SELECT name, abbreviation FROM State)
+      SELECT T3.name, SpringCases2020, SpringCases2021
+      FROM (T1 JOIN T2 ON T1.state = T2.state JOIN T3 on T3.abbreviation = T2.state)
+      ORDER BY SpringCases2020 DESC`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+        }
+      }
+    );
+  } else if(season == "fall") {
+    connection.query(
+      `WITH T1 AS (SELECT SUM(tot_cases) as 'FallCases2020', state
+      FROM Day
+      WHERE submission_date LIKE (submission_date LIKE '2020-09%')
+      OR (submission_date LIKE '2020-10%')
+      OR (submission_date LIKE '2020-11%')
+      GROUP BY state),
+      T2 AS (SELECT SUM(tot_cases) as 'FallCases2021', state
+      FROM Day
+      WHERE submission_date LIKE (submission_date LIKE '2021-09%')
+      OR (submission_date LIKE '2021-10%')
+      OR (submission_date LIKE '2021-11%')
+      GROUP BY state)
+      ,T3 AS (SELECT name, abbreviation FROM State)
+      SELECT T3.name, FallCases2020, FallCases2021
+      FROM (T1 JOIN T2 ON T1.state = T2.state JOIN T3 on T3.abbreviation = T2.state)
+      ORDER BY FallCases2020 DESC`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+        }
+      }
+    );
+  }
+ 
+}
+
+/*
+Examples:
+  http://localhost:8080/covid/covid_comparison?state1=NM&state2=CA
+*/
+async function covid_comparison(req, res) {
+  const state1 = req.query.state1;
+  const state2 = req.query.state2;
+  connection.query(
+    `SELECT
+      state as State
+      sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
+      Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
+      sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
+      Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
+      WHERE state = '${state1}' OR  state = '${state2}'
+    FROM Day`,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
+    }
+  );
+}
+  
+
+/*
+Examples:
+  http://localhost:8080/covid/covid_comparison?start=2020-03-01&end=2020-03-31
+*/
+async function covid_filter(req, res) {
+  const end = req.query.end;
+  const start = req.query.start;
+  connection.query(
+    `SELECT
+    sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
+    Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
+    sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
+    Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
+    FROM Day
+    WHERE submission_date BETWEEN ${start}' AND ${end}'`,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
+    }
+  );
+}
+
 module.exports = {
   hello,
   case_and_stock,
@@ -1019,4 +1243,9 @@ module.exports = {
   elections_most_party,
   elections_populous,
   company_political,
+  covid_gen,
+  covid_comparison,
+  covid_filter,
+  covid_season,
+  covid_state
 };
