@@ -66,7 +66,7 @@ app.get("/covid/state", routes.covid_state);
 app.get("/covid/season", routes.covid_season);
 
 // takes in two states, and produces data for 
-app.get("/covid/comparison", routes.covid_comp);
+app.get("/covid/comparison", routes.covid_comparison);
 
 // takes in a timeframe, and an optional state list, produces covid stats 
 app.get("/covid/filter", routes.covid_filter);
