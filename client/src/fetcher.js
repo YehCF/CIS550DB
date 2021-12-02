@@ -128,6 +128,43 @@ const getYelpFilter = async (start, end, state, categories) => {
   })
   return res.json()
 }
+
+const getCovidData = async (
+  start,
+  end,
+  state
+) => {
+  if(state) {
+    var res = await fetch(
+      `http://${config.server_host}:${config.server_port}/covid/filter?start=${start}&end=${end}&state=${state}`,
+      {
+        method: "GET",
+      }
+    );
+    return res.json();
+  } else {
+   var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/covid/filter?start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+  }
+};
+
+const getCaseAndVax = async (state, start, end) => {
+  console.log("123123")
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/covid/vax?state=${state}&start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
+
 export {
   getCaseAndStock,
   getAllStocks,
@@ -141,5 +178,7 @@ export {
   getYelpCategories,
   getYelpState,
   getYelpTime,
-  getYelpFilter
+  getYelpFilter,
+  getCovidData,
+  getCaseAndVax
 };

@@ -13,7 +13,7 @@ class MenuBar extends React.Component {
             </NavLink>
           </NavItem>
           <NavItem>
-            <NavLink active href="/COVID19">
+            <NavLink active href="/covid">
               COVID19
             </NavLink>
           </NavItem>

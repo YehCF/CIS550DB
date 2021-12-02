@@ -71,6 +71,9 @@ app.get("/covid/comparison", routes.covid_comparison);
 // takes in a timeframe, and an optional state list, produces covid stats 
 app.get("/covid/filter", routes.covid_filter);
 
+// takes in a timeframe, and an optional state list, produces covid stats 
+app.get("/covid/vax", routes.case_and_vax);
+
 app.listen(config.server_port, () => {
   console.log(
     `Server running at http://${config.server_host}:${config.server_port}/`
