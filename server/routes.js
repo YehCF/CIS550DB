@@ -1199,29 +1199,104 @@ async function covid_comparison(req, res) {
 
 /*
 Examples:
-  http://localhost:8080/covid/covid_comparison?start=2020-03-01&end=2020-03-31
+  http://localhost:8080/covid/comparison?start=2020-03-01&end=2020-03-31
+  http://localhost:8080/covid/comparison?start=2020-03-01&end=2020-03-31&state=NM/
 */
 async function covid_filter(req, res) {
   const end = req.query.end;
   const start = req.query.start;
-  connection.query(
-    `SELECT
-    sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
-    Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
-    sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
-    Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
-    FROM Day
-    WHERE submission_date BETWEEN ${start}' AND ${end}'`,
-    function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
+  const state = req.query.state;
+  if (state) {
+    connection.query(
+      `SELECT
+      state,
+      sum(tot_cases) AS 'conf_cases',
+      Round(avg(tot_cases),-1) AS 'avg_conf_cases',
+      sum(prob_cases) AS 'tot_prob_cases',
+      Round(avg(prob_cases),-1) AS 'avg_prob_cases',
+      sum(conf_death) AS 'tot_death',
+      Round(avg(conf_death),-1) AS 'avg_death'
+      FROM Day
+      WHERE submission_date BETWEEN '${start}' AND '${end}' AND state = '${state}'
+      GROUP BY state`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+        }
       }
-    }
-  );
+    );
+  } else {
+    connection.query(
+      `SELECT
+      state,
+      sum(tot_cases) AS 'conf_cases',
+      Round(avg(tot_cases),-1) AS 'avg_conf_cases',
+      sum(prob_cases) AS 'tot_prob_cases',
+      Round(avg(prob_cases),-1) AS 'avg_prob_cases',
+      sum(conf_death) AS 'tot_death',
+      Round(avg(conf_death),-1) AS 'avg_death'
+      FROM Day
+      WHERE submission_date BETWEEN '${start}' AND '${end}'
+      GROUP BY state`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+        }
+      }
+    );
+  }
 }
+
+/**
+ * Get the daily amount of vaccination given and the number of new cases 
+ * Route: /case/stock
+ * Route Parameter(s) @param: None
+ * Query Parameter(s) @param: start (Date), end (Date), code (string), state (string)
+ * Route Handler: case_and_stock(req, res)
+ * Return Type: JSON
+ * Return Parameters:
+ * {results (JSON array of { date (Date), price (float), new_case (int)})}
+ * Expected (Output) Behaviour:
+ * - Example: /case/stock?start=2020-05-01&end=2020-12-31&code=AAPL
+ */
+ async function case_and_vax(req, res) {
+  // check query params
+  const state = req.query.state;
+  const start = req.query.start;
+  const end = req.query.end;
+  
+    connection.query(
+      `WITH NewCase AS (
+        SELECT state, submission_date, SUM(new_case) AS new_case
+        FROM Day
+        WHERE new_case >= 0 AND state = '${state}'
+        GROUP BY submission_date
+      )
+      SELECT N.state,  DATE_FORMAT(N.submission_date, "%m-%d-%Y") AS date, V.Administered_Daily AS vaxs, N.new_case AS new_case
+      FROM NewCase N JOIN Vaccination V ON  (N.submission_date = V.Date AND V.Location = N.state)
+      WHERE N.submission_date BETWEEN '${start}'AND '${end}'
+      AND V.Date BETWEEN '${start}'AND '${end}'`,
+      function (error, results, fields) {
+        if (error) {
+          console.log(error);
+          res.json({ error: error });
+        } else if (results) {
+          res.json({ results: results });
+        }
+      }
+    );
+  }
+
+
+
+
+
 
 module.exports = {
   hello,
@@ -1247,5 +1322,6 @@ module.exports = {
   covid_comparison,
   covid_filter,
   covid_season,
-  covid_state
+  covid_state,
+  case_and_vax
 };
