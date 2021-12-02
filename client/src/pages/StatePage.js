@@ -1,20 +1,22 @@
 import React from "react";
-import {
-  Form,
-  FormInput,
-  FormGroup,
-  Card,
-  CardBody,
-  CardTitle,
-} from "shards-react";
-import { Divider, Row, Col, DatePicker, Space } from "antd";
+import { Form, Card, CardBody, CardTitle, FormGroup } from "shards-react";
+import { Divider, Row, Col, DatePicker, Space, Radio } from "antd";
 import moment from "moment";
 import MenuBar from "../components/MenuBar";
 import { getAllStates, getStateVolatility, getStateCaseNorm } from "../fetcher";
 import USAMap from "react-usa-map";
 import { nColors, colorArray, MapLegend } from "../components/MapLegend";
+
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
+
+// Radio Setting
+const options = [
+  { label: "Case", value: "case" },
+  { label: "Vote", value: "Vote" },
+  { label: "Stock", value: "Stock" },
+  { label: "Yelp", value: "Yelp" },
+];
 
 // helper for stock related info
 const volatilityToColor = (volatility) => {
@@ -171,11 +173,11 @@ class StatePage extends React.Component {
 
   render() {
     return (
-      <div id="test">
+      <div>
         <MenuBar />
-        <Divider>
-          <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
-            <Row>
+        <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
+          <Row>
+            <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
               <Space direction="vertical" size={1}>
                 <label>Start to End Date</label>
                 <RangePicker
@@ -187,55 +189,82 @@ class StatePage extends React.Component {
                   onCalendarChange={this.handleCalendarChange}
                 />
               </Space>
-            </Row>
-          </Form>
-        </Divider>
-        <Divider>
+            </FormGroup>
+          </Row>
+          <Row>
+            <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+              <label>Topic</label>
+              <Radio.Group
+                options={options}
+                // onChange={this
+                value="Stock"
+                optionType="button"
+                buttonStyle="solid"
+              />
+            </FormGroup>
+          </Row>
+        </Form>
+        <div
+          id="map"
+          style={{ width: "70vw", margin: "0 auto", marginTop: "5vh" }}
+        >
+          <USAMap customize={this.state.stateResults} />
+          <MapLegend axis={{ axis1: "case", axis2: "volatility" }} />
           <div
-            id="map"
-            style={{ width: "70vw", margin: "0 auto", marginTop: "5vh" }}
+            style={{
+              width: "25vw",
+              height: 200,
+              margin: "auto auto",
+              marginTop: "1vh",
+            }}
           >
-            <USAMap customize={this.state.stateResults} />
-            <MapLegend />
-          </div>
-        </Divider>
-        <Divider>
-          <div style={{ width: "30vw", margin: "0 auto", marginTop: "5vh" }}>
             {this.state.selectedStateInfo && (
               <Card>
                 <CardBody>
-                  <CardTitle>
-                    <h3>{this.state.selectedStateInfo["state"]}</h3>
+                  <CardTitle style={{ textAlign: "center" }}>
+                    <h4>{this.state.selectedStateInfo["state"]}</h4>
                   </CardTitle>
-                  <Row gutter="30" align="middle" justify="center">
-                    <Col>
-                      Confirmed Cases:{" "}
-                      {this.state.selectedStateInfo["numConfirmedCases"]} (n)
-                    </Col>
-                    <Col>
-                      Normalized Ratio to Population:
-                      {this.state.selectedStateInfo["numConfirmedCasesRatio"]}
-                    </Col>
+                  <Row style={{ marginTop: "15px" }}>
+                    - There are{" "}
+                    {this.state.selectedStateInfo["numConfirmedCases"]}{" "}
+                    confirmed cases
                   </Row>
-                  {/* for stock */}
-                  <Row gutter="30" align="middle" justify="center">
-                    <Col>
-                      Volatility:{" "}
-                      {this.state.selectedStateInfo["stockVolatility"]}
-                    </Col>
-                    <Col>
-                      {/* TO-DO: change to  {this.state.selectedStateInfo["companyCode"]} */}
-                      Company: <a onClick={this.goToStock}>APPL</a>
-                    </Col>
+                  <Row style={{ marginTop: "15px" }}>
+                    - Case related sentence
+                  </Row>
+                  <Row style={{ marginTop: "15px" }}>
+                    - Vote related sentence
+                  </Row>
+                  <Row style={{ marginTop: "15px" }}>
+                    - The average volatility is{" "}
+                    {this.state.selectedStateInfo["stockVolatility"]}
+                    <a onClick={this.goToStock} style={{ color: "blue" }}>
+                      (learn more)
+                    </a>
+                  </Row>
+                  <Row style={{ marginTop: "15px" }}>
+                    - Vote related sentence
                   </Row>
                 </CardBody>
               </Card>
             )}
           </div>
-        </Divider>
+        </div>
       </div>
     );
   }
 }
 
 export default StatePage;
+
+// {/* for stock */}
+// <Row gutter="30" align="middle" justify="center">
+// <Col>
+//   Volatility:{" "}
+//   {this.state.selectedStateInfo["stockVolatility"]}
+// </Col>
+// <Col>
+//   {/* TO-DO: change to  {this.state.selectedStateInfo["companyCode"]} */}
+//   Company: <a onClick={this.goToStock}>APPL</a>
+// </Col>
+// </Row>
