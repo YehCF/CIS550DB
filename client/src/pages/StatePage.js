@@ -80,7 +80,7 @@ class StatePage extends React.Component {
       },
       topicToLegend: {
         Stock: "Volatility",
-        Case: "Vac",
+        Case: "Case",
         Vote: "Vote",
         Yelp: "Reviews",
       },
@@ -115,7 +115,10 @@ class StatePage extends React.Component {
     });
     this.updateStateMapColor(event);
     this.setState({
-      legendLabels: { axis1: "Case", axis2: "wdokowkd" },
+      legendLabels: {
+        axis1: "Case",
+        axis2: this.state.topicToLegend[event.target.value],
+      },
     });
   }
 

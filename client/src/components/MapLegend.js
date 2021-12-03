@@ -34,12 +34,6 @@ for (let i = 0; i < nColors; i++) {
 // Convert Legend to React Component
 const RD3Component = rd3.Component;
 class MapLegend extends React.Component {
-  constructor(props) {
-    super(props);
-    console.log(props);
-    this.state = { d3: "", axis1: props.axis.axis1, axis2: props.axis.axis2 };
-  }
-
   // generate USA State Map Legend
   generateLegend = (axis1, axis2) => {
     const h = 100;
@@ -163,14 +157,12 @@ class MapLegend extends React.Component {
     return svgLegend;
   };
 
-  componentDidMount() {
-    this.setState({
-      d3: this.generateLegend(this.state.axis1, this.state.axis2).node(),
-    });
-  }
-
   render() {
-    return <RD3Component data={this.state.d3} />;
+    return (
+      <RD3Component
+        data={this.generateLegend("Case", this.props.axis.axis2).node()}
+      />
+    );
   }
 }
 
