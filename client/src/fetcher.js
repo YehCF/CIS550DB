@@ -95,46 +95,57 @@ const getStateCaseNorm = async (start, end) => {
 };
 
 const getYelpMap = async (start, end) => {
-  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp?start=${start}&end=${end}`, {
-      method: 'GET',
-  })
-  return res.json()
-}
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/yelp?start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
 
 const getYelpCategories = async () => {
-  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp/categories`, {
-      method: 'GET',
-  })
-  return res.json()
-}
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/yelp/categories`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
 
 const getYelpState = async () => {
-  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp/state`, {
-      method: 'GET',
-  })
-  return res.json()
-}
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/yelp/state`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
 
 const getYelpTime = async () => {
-  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp/time`, {
-      method: 'GET',
-  })
-  return res.json()
-}
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/yelp/time`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
 
 const getYelpFilter = async (start, end, state, categories) => {
-  var res = await fetch(`http://${config.server_host}:${config.server_port}/yelp/filter?start=${start}&end=${end}&state=${state}&categories=${categories}`, {
-      method: 'GET',
-  })
-  return res.json()
-}
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/yelp/filter?start=${start}&end=${end}&state=${state}&categories=${categories}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
 
-const getCovidData = async (
-  start,
-  end,
-  state
-) => {
-  if(state) {
+const getCovidData = async (start, end, state) => {
+  if (state) {
     var res = await fetch(
       `http://${config.server_host}:${config.server_port}/covid/filter?start=${start}&end=${end}&state=${state}`,
       {
@@ -143,13 +154,13 @@ const getCovidData = async (
     );
     return res.json();
   } else {
-   var res = await fetch(
-    `http://${config.server_host}:${config.server_port}/covid/filter?start=${start}&end=${end}`,
-    {
-      method: "GET",
-    }
-  );
-  return res.json();
+    var res = await fetch(
+      `http://${config.server_host}:${config.server_port}/covid/filter?start=${start}&end=${end}`,
+      {
+        method: "GET",
+      }
+    );
+    return res.json();
   }
 };
 
@@ -184,41 +195,43 @@ const getCovidSeason = async (state) => {
   return res.json();
 };
 
-
 const getNews = async (topic, page, language, sortBy) => {
-//this API have support pagination, but I think showing 10-20 news are enough
+  //this API have support pagination, but I think showing 10-20 news are enough
   try {
-    var res = await fetch(`https://newsapi.org/v2/everything?q=${topic}&apiKey=${config.api_key}&pageSize=${page}&language=${language}&sortBy=${sortBy}`, {
-      method: 'GET',
-    })
+    var res = await fetch(
+      `https://newsapi.org/v2/everything?q=${topic}&apiKey=${config.api_key}&pageSize=${page}&language=${language}&sortBy=${sortBy}`,
+      {
+        method: "GET",
+      }
+    );
     // console.log(res.json().articles);
-    return res.json()
+    return res.json();
   } catch (error) {
     console.log(error);
   }
 };
 
-const getPartyCounts = async(yearmin, yearmax) => {
+const getPartyCounts = async (yearmin, yearmax) => {
   var res = await fetch(
-      `http://${config.server_host}:${config.server_port}/elections?minyear=${yearmin}&maxyear=${yearmax}`,
-      {method: "GET"}
+    `http://${config.server_host}:${config.server_port}/elections?minyear=${yearmin}&maxyear=${yearmax}`,
+    { method: "GET" }
   );
   return res.json();
 };
 
-const getPopulousVotes = async(yearmin, yearmax, limit) => {
+const getPopulousVotes = async (yearmin, yearmax, limit) => {
   var res = await fetch(
-      `http://${config.server_host}:${config.server_port}/elections/populous/?minyear=${yearmin}&maxyear=${yearmax}&limit=${limit}`
+    `http://${config.server_host}:${config.server_port}/elections/populous/?minyear=${yearmin}&maxyear=${yearmax}&limit=${limit}`
   );
   return res.json();
-}
+};
 
-const getPercentVotes = async(yearmin, yearmax, party) => {
+const getPercentVotes = async (yearmin, yearmax, party) => {
   var res = await fetch(
-      `http://${config.server_host}:${config.server_port}/elections/party/?minyear=${yearmin}&maxyear=${yearmax}&party=${party}`
-  )
+    `http://${config.server_host}:${config.server_port}/elections/party/?minyear=${yearmin}&maxyear=${yearmax}&party=${party}`
+  );
   return res.json();
-}
+};
 
 export {
   getCaseAndStock,
@@ -241,5 +254,5 @@ export {
   getNews,
   getPopulousVotes,
   getPartyCounts,
-  getPercentVotes
+  getPercentVotes,
 };

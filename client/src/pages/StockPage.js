@@ -395,7 +395,6 @@ class StockPage extends React.Component {
       });
       this.setState({ mapLoading: false });
     });
-    console.log("inn");
   }
 
   componentDidMount() {

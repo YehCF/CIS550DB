@@ -6,13 +6,15 @@ import MenuBar from "../components/MenuBar";
 import { getAllStates, getStateVolatility, getStateCaseNorm } from "../fetcher";
 import USAMap from "react-usa-map";
 import { nColors, colorArray, MapLegend } from "../components/MapLegend";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
 
 // Radio Setting
 const options = [
-  { label: "Case", value: "case" },
+  { label: "Case", value: "Case" },
   { label: "Vote", value: "Vote" },
   { label: "Stock", value: "Stock" },
   { label: "Yelp", value: "Yelp" },
@@ -37,29 +39,128 @@ const ncaseRatioToColor = (ratio) => {
 };
 
 class StatePage extends React.Component {
+  /**
+   * StateResults:
+   *    {"state_abbreviation": {fill: colorArray[ncaseRatioToColor(ratio)][otherAttributeToColor(attr_value)],
+   *                            numConfirmedCases: xxxx,
+   *                            numConfirmedCasesRatio: xxxx,
+   *                            case_related: xxx,
+   *                            vote_related: xxx,
+   *                            volatility: xxx,
+   *                            yelp_related: xxx}}
+   * Descriptions:
+   *  - Each time, when the start & end time are updated, all state-wise statistics would be updated (fetched)
+   *  - One axis of the map shows the numConfirmedCasesRatio
+   *  - The other axis of the map shows the color defined by the Radio UI (currently, default to Stock)
+   *  - Upon the change of the Radio UI, the color of the selected attribute would be set (replace the current one on the map)
+   *  - No data would be re-fetched if the user only change the Radio
+   */
   constructor(props) {
     super(props);
-
+    console.log(props);
     this.state = {
       startDate: "2020-03-01",
       endDate: "2020-12-31",
       stateResults: {},
-      allStates: new Set([]),
+      allStates: {},
       selectedStateInfo: null,
+      selectedTopic: "Stock",
+      // The mapping from the Radio Value to the Attribute in stateResults[state]
+      topicToAttribute: {
+        Stock: "stockVolatility",
+        Case: "",
+        Vote: "",
+        Yelp: "",
+      },
+      topicToColorFunc: {
+        Stock: volatilityToColor,
+        Case: "",
+        Vote: "",
+        Yelp: "",
+      },
+      topicToLegend: {
+        Stock: "Volatility",
+        Case: "Vac",
+        Vote: "Vote",
+        Yelp: "Reviews",
+      },
+      legendLabels: { axis1: "Case", axis2: "Stock" },
     };
 
     this.handleStateStock = this.handleStateStock.bind(this);
     this.handleStateCases = this.handleStateCases.bind(this);
     this.handleCalendarChange = this.handleCalendarChange.bind(this);
+    this.handleRadioChange = this.handleRadioChange.bind(this);
+  }
+
+  // UI
+  handleCalendarChange(event) {
+    if (event[0] && event[1]) {
+      this.setState({
+        startDate: event[0].format(dateFormat).toString(),
+        endDate: event[1].format(dateFormat).toString(),
+      });
+      // update data
+      // case
+      // vote
+      // stock
+      this.handleStateStock(event);
+      // yelp
+    }
+  }
+
+  handleRadioChange(event) {
+    this.setState({
+      selectedTopic: event.target.value,
+    });
+    this.updateStateMapColor(event);
+    this.setState({
+      legendLabels: { axis1: "Case", axis2: "wdokowkd" },
+    });
+  }
+
+  updateStateMapColor(event) {
+    // event comes from handleRadioChange
+    let topic = this.state.selectedTopic;
+    if (event) {
+      topic = event.target.value;
+    }
+    let attr = this.state.topicToAttribute[topic];
+    let attrColorFunc = this.state.topicToColorFunc[topic];
+
+    if (attr && attrColorFunc) {
+      // update the fill of each state in stateResults
+      const newStateResults = {};
+      for (const [state, info] of Object.entries(this.state.stateResults)) {
+        if (
+          state &&
+          info &&
+          info["numConfirmedCasesRatio"] >= 0 &&
+          info[attr] >= 0
+        ) {
+          newStateResults[state] = {
+            ...info,
+            fill: colorArray[ncaseRatioToColor(info["numConfirmedCasesRatio"])][
+              attrColorFunc(info[attr])
+            ],
+          };
+        }
+      }
+      // set state to update the map for new stock info
+      this.setState({
+        stateResults: { ...this.state.stateResults, ...newStateResults },
+      });
+    }
   }
 
   initStateResults() {
     // set state abbreviations
     getAllStates()
       .then((res) => {
-        const states = new Set([]);
+        const states = {};
         for (const obj of res.results) {
-          states.add(obj["state"]);
+          // abbreviation: fullname
+          states[obj["state"]] = obj["name"];
         }
         this.setState({ allStates: states });
       })
@@ -70,11 +171,14 @@ class StatePage extends React.Component {
           numConfirmedCases: 0,
           numConfirmedCasesRatio: 0,
           fill: colorArray[0][0], // default color
-          // TO-DO: add other key-values for initialization
+          // TODO: add other key-values for initialization
+          // TODO: case, vote, yelp
         };
-        for (const state of this.state.allStates) {
+        // initialize with clickHandler for each state
+        for (const [state, fullname] of Object.entries(this.state.allStates)) {
           this.state.stateResults[state] = {
             ...stateInfo,
+            name: fullname,
             clickHandler: (event) => {
               this.setState({
                 selectedStateInfo: {
@@ -86,31 +190,19 @@ class StatePage extends React.Component {
           };
         }
       });
-  }
-
-  componentDidMount() {
-    this.initStateResults();
-    this.handleStateCases();
     this.handleStateStock();
-  }
-
-  handleCalendarChange(event) {
-    this.setState({
-      startDate: event[0].format(dateFormat).toString(),
-      endDate: event[1].format(dateFormat).toString(),
-    });
-    this.handleStateStock(event);
+    this.handleStateCases();
   }
 
   handleStateStock(event) {
-    // event => null or the input from calendar
-    let start = this.state.startDate;
-    let end = this.state.endDate;
+    // event: null or the input from calendar
+    let startDate = this.state.startDate;
+    let endDate = this.state.endDate;
     if (event && event[0] && event[1]) {
-      start = event[0].format(dateFormat).toString();
-      end = event[1].format(dateFormat).toString();
+      startDate = event[0].format(dateFormat).toString();
+      endDate = event[1].format(dateFormat).toString();
     }
-    getStateVolatility(start, end).then((res) => {
+    getStateVolatility(startDate, endDate).then((res) => {
       // collect new state results
       const newStateResults = {};
       // only update the stock related info
@@ -119,11 +211,6 @@ class StatePage extends React.Component {
           newStateResults[info["state"]] = {
             ...this.state.stateResults[info["state"]],
             stockVolatility: info["volatility"].toFixed(3),
-            fill: colorArray[
-              ncaseRatioToColor(
-                this.state.stateResults[info["state"]]["numConfirmedCasesRatio"]
-              )
-            ][volatilityToColor(info["volatility"])],
           };
         }
       }
@@ -131,6 +218,8 @@ class StatePage extends React.Component {
       this.setState({
         stateResults: { ...this.state.stateResults, ...newStateResults },
       });
+      // update the color based on the Radio
+      this.updateStateMapColor();
     });
   }
 
@@ -151,11 +240,6 @@ class StatePage extends React.Component {
             ...this.state.stateResults[info["state"]],
             numConfirmedCases: info["new_case"],
             numConfirmedCasesRatio: info["norm_ratio"].toFixed(3),
-            fill: colorArray[ncaseRatioToColor(info["norm_ratio"])][
-              volatilityToColor(
-                this.state.stateResults[info["state"]]["stockVolatility"]
-              )
-            ],
           };
         }
       }
@@ -163,12 +247,24 @@ class StatePage extends React.Component {
       this.setState({
         stateResults: { ...this.state.stateResults, ...newStateResults },
       });
+      // update the color based on the Radio
+      this.updateStateMapColor();
     });
   }
+
+  // fetch state vote
+  handleStateVote() {}
+
+  // fetch state yelp
+  handleStateYelp() {}
 
   goToStock() {
     // TO-DO
     window.location = `/stock`;
+  }
+
+  componentDidMount() {
+    this.initStateResults();
   }
 
   render() {
@@ -196,8 +292,8 @@ class StatePage extends React.Component {
               <label>Topic</label>
               <Radio.Group
                 options={options}
-                // onChange={this
-                value="Stock"
+                onChange={this.handleRadioChange}
+                value={this.state.selectedTopic}
                 optionType="button"
                 buttonStyle="solid"
               />
@@ -209,7 +305,7 @@ class StatePage extends React.Component {
           style={{ width: "70vw", margin: "0 auto", marginTop: "5vh" }}
         >
           <USAMap customize={this.state.stateResults} />
-          <MapLegend axis={{ axis1: "case", axis2: "volatility" }} />
+          <MapLegend axis={this.state.legendLabels} />
           <div
             style={{
               width: "25vw",
@@ -222,28 +318,45 @@ class StatePage extends React.Component {
               <Card>
                 <CardBody>
                   <CardTitle style={{ textAlign: "center" }}>
-                    <h4>{this.state.selectedStateInfo["state"]}</h4>
+                    <h5>
+                      {this.state.selectedStateInfo["name"]} (
+                      {this.state.selectedStateInfo["state"]})
+                    </h5>
                   </CardTitle>
                   <Row style={{ marginTop: "15px" }}>
                     - There are{" "}
-                    {this.state.selectedStateInfo["numConfirmedCases"]}{" "}
+                    <span class="state-card-info">
+                      {" "}
+                      {this.state.selectedStateInfo["numConfirmedCases"]}{" "}
+                    </span>
                     confirmed cases
                   </Row>
                   <Row style={{ marginTop: "15px" }}>
-                    - Case related sentence
-                  </Row>
-                  <Row style={{ marginTop: "15px" }}>
-                    - Vote related sentence
-                  </Row>
-                  <Row style={{ marginTop: "15px" }}>
-                    - The average volatility is{" "}
-                    {this.state.selectedStateInfo["stockVolatility"]}
-                    <a onClick={this.goToStock} style={{ color: "blue" }}>
-                      (learn more)
+                    - Case related sentence{" "}
+                    <a onClick={this.goToStock} class="state-card-goto">
+                      <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>
                   <Row style={{ marginTop: "15px" }}>
                     - Vote related sentence
+                    <a onClick={this.goToStock} class="state-card-goto">
+                      <FontAwesomeIcon icon={faInfoCircle} />
+                    </a>
+                  </Row>
+                  <Row style={{ marginTop: "15px" }}>
+                    - The average volatility is{" "}
+                    <span class="state-card-info">
+                      {this.state.selectedStateInfo["stockVolatility"]}
+                    </span>
+                    <a onClick={this.goToStock} class="state-card-goto">
+                      <FontAwesomeIcon icon={faInfoCircle} />
+                    </a>
+                  </Row>
+                  <Row style={{ marginTop: "15px" }}>
+                    - Vote related sentence{" "}
+                    <a onClick={this.goToStock} class="state-card-goto">
+                      <FontAwesomeIcon icon={faInfoCircle} />
+                    </a>
                   </Row>
                 </CardBody>
               </Card>
