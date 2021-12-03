@@ -141,11 +141,13 @@ class VotingPage extends React.Component {
                     <CardBody style={{backgroundColor: '#f7f7f7'}}>
                         <CardTitle>
                             <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                                <h3>Overall Year Selection</h3>
+                                <h3>Explore Elections!</h3>
                             </div>
                         </CardTitle>
+                        <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
+                            <p>Overall Year Selection</p>
+                        </div>
                         <Slider style = {{ width: "80vw", margin: "0 auto", marginTop: "5vh", marginBottom: "5vh", color: '#dedede'}} range defaultValue={[1976, 2020]} min={1976} max={2020} marks={marks} onChange={this.handleYearChange}></Slider>
-
                     </CardBody>
                 </Card>
                 <Card>
@@ -155,11 +157,15 @@ class VotingPage extends React.Component {
                                 <h3>Most Populous vs. Least Populous States</h3>
                             </div>
                         </CardTitle>
-                        <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                            <p>TO DO: add description here</p>
-                        </div>
+
                         <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
                             <Row>
+                                <Col flex={2}>
+                                    <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                                        <p> Look at how the k most and least populous states have voted between {this.state.minyear} and {this.state.maxyear}.
+                                            Specify k in the box to the right!</p>
+                                    </FormGroup>
+                                </Col>
                                 <Col flex={2}>
                                     <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
                                         <label>Value of k</label>
@@ -197,11 +203,8 @@ class VotingPage extends React.Component {
                             }}
                             style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
                         />
-
                     </CardBody>
                 </Card>
-
-
             </div>
         );
     }
