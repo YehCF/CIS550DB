@@ -6,6 +6,7 @@ import StockPage from "./pages/StockPage";
 import StatePage from "./pages/StatePage";
 import YelpPage from "./pages/YelpPage";
 import CovidPage from "./pages/CovidPage";
+import VotingPage from "./pages/VotingPage";
 
 import "antd/dist/antd.css";
 
@@ -18,8 +19,9 @@ ReactDOM.render(
       <Switch>
         <Route exact path="/" render={() => <StatePage />} />
         <Route exact path="/stock" render={() => <StockPage />} />
-        <Route exact	path="/yelp" render={() => <YelpPage /> }/>
-        <Route exact	path="/covid" render={() => <CovidPage /> }/>
+        <Route exact path="/yelp" render={() => <YelpPage /> }/>
+        <Route exact path="/covid" render={() => <CovidPage /> }/>
+        <Route exact path="/vote" render={() => <VotingPage /> }/>
       </Switch>
     </Router>
   </div>,
