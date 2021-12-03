@@ -164,7 +164,18 @@ const getCaseAndVax = async (state, start, end) => {
   return res.json();
 };
 
-
+const getNews = async (topic, page, language, sortBy) => {
+//this API have support pagination, but I think showing 10-20 news are enough
+  try {
+    var res = await fetch(`https://newsapi.org/v2/everything?q=${topic}&apiKey=${config.api_key}&pageSize=${page}&language=${language}&sortBy=${sortBy}`, {
+      method: 'GET',
+    })
+    // console.log(res.json().articles);
+    return res.json()
+  } catch (error) {
+    console.log(error);
+  }
+};
 export {
   getCaseAndStock,
   getAllStocks,
@@ -180,5 +191,6 @@ export {
   getYelpTime,
   getYelpFilter,
   getCovidData,
-  getCaseAndVax
+  getCaseAndVax,
+  getNews
 };

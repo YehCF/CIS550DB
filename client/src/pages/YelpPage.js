@@ -1,6 +1,7 @@
 import React from 'react';
 //npm i react-loading
 import ReactLoading from 'react-loading';
+// import styled from "@emotion/styled";
 import { usePromiseTracker } from "react-promise-tracker";
 // npm install react-promise-tracker --save
 import { trackPromise } from 'react-promise-tracker';
@@ -10,7 +11,8 @@ import moment from "moment";
 // npm install antd-button-color
 import Button from "antd-button-color";
 import { DualAxes } from "@ant-design/charts";
-
+import 'bootstrap/dist/css/bootstrap.css';
+import { Carousel } from 'react-bootstrap';
 import {
     Select,
     Row,
@@ -18,13 +20,13 @@ import {
     DatePicker,
     Space
 } from 'antd'
-
-
 import MenuBar from '../components/MenuBar';
+// import logo from './Yelp_Logo.png';
 import {getYelpCategories,
         getYelpState,
         getYelpTime,
-        getYelpFilter } from '../fetcher'
+        getYelpFilter,
+        getNews} from '../fetcher';
 
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
@@ -142,6 +144,7 @@ var config = {
     return <DualAxes {...config} />;
 };
 
+
 class YelpPage extends React.Component {
     constructor(props) {
         super(props)
@@ -156,7 +159,8 @@ class YelpPage extends React.Component {
             isFetching : true,
             disable: false,
             graph_review_name: '',
-            graph_star_name: ''
+            graph_star_name: '',
+            yelpNews: []
         }
 
         this.handleStateChange = this.handleStateChange.bind(this)
@@ -233,13 +237,20 @@ class YelpPage extends React.Component {
               })
               start = this.state.startTime
               end = this.state.endTime
-        })
+            })
 
         getYelpState().then(res=>{
             this.setState({yelpStateFilter: res.results.map(d => ({
                 "value" : d.state,
                 "label" : d.state
               }))})
+        })
+
+        getNews("yelp", 20, "en", "publishedAt").then(res=>{
+            this.setState({
+                yelpNews: res.articles.map((article) => (article))
+                // yelpNews: res.data?.articles
+            })
         })
 
 
@@ -276,7 +287,7 @@ class YelpPage extends React.Component {
     }
 
     render() {
-        // console.log(!this.state.isFetching)
+        // console.log(this.state.yelpNews.length)
         // console.log(this.state.yelpResults.length)
         let graph_review='';
         let graph_star='';
@@ -312,7 +323,7 @@ class YelpPage extends React.Component {
                                 <h3>Categories</h3>
                                 <Select showSearch  style={{width: 300}} allowClear
                                     disabled={this.state.disable}
-                                    placeholder="Input Categoriesate Name" 
+                                    placeholder="Input Categories Name" 
                                     options={this.state.yelpCategoriesFilter} 
                                     value={this.state.categories}
                                     onChange={this.handleCategoreisChange}/>
@@ -342,11 +353,12 @@ class YelpPage extends React.Component {
                         
                         <br></br>
                         <Row>
-                            <Col><FormGroup style={{ width: '10vw', margin: '0 auto' }}>
-                                <Button type="primary" icon={<SearchOutlined />} disabled={this.state.disable} onClick={this.handleSearch}  height={'20%'} width={'20%'} >
+                            <Col>
+                                <Button type="primary" icon={<SearchOutlined />} disabled={this.state.disable} onClick={this.handleSearch}>
                                     Search
                                 </Button>
-                            </FormGroup></Col>
+                            </Col>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                             <Col>
                                 <Button danger onClick={this.handleClear} disabled={this.state.disable} height={'20%'} width={'20%'} >
                                     Clear
@@ -364,7 +376,37 @@ class YelpPage extends React.Component {
                         
                         <h5>{this.state.graph_star_name}</h5>
                         {graph_star}
+
+                        <br/>
+                        <h3>Yelp News</h3>
+
+                        <Carousel variant="dark">
+                        {
+                            this.state.yelpNews.map((article, key) =>
+                            article.title === "" || article.title === null ? null :
+                            article.urlToImage === "" || article.urlToImage === null ? null :
+                            <Carousel.Item key={key} >
+                                <Col >
+                                 {/* some url image have permission problem, so I pick other yelp image to replace it */}
+                                    <div  className="d-block mx-auto  w-50">{article.title}</div>
+                                    <img src={article.urlToImage} className="d-block mx-auto  w-50" height="300" 
+                                    alt={article.urlToImage}
+                                    style={{cursor: 'pointer'}}
+                                    onClick={() => window.open(article.url, "_blank")}    
+                                    onError={(e)=>{e.target.onerror = null; 
+                                        e.target.src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Yelp_Logo.svg/1920px-Yelp_Logo.svg.png'
+                                    }}/>
+                                        
+                                
+                                </Col>
+                            </Carousel.Item>
+
+                            
+                            )
+                        }
+                        </Carousel>
                     </Form>
+                    
                     
                 </div>
             )

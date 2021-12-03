@@ -1,4 +1,5 @@
 {
     "server_host": "127.0.0.1",
-    "server_port":"8080"
+    "server_port":"8080",
+    "api_key": "cd7557dbc2584388b595f010a61de723"
 }
