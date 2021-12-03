@@ -142,7 +142,6 @@ const CovidDualAxes = (data) => {
 
 //Bar Chart
 const DemoColumn = (res) => {
-  console.log("in: ", res.data);
   const data = res.data;
   /**
    * [{
@@ -154,11 +153,12 @@ const DemoColumn = (res) => {
     data,
     xField: "state",
     yField: "volatility",
+    // label is to show the y value in each bar
     label: {
-      position: "middle",
+      position: "top",
       // 'top', 'bottom', 'middle',
       style: {
-        fill: "#FFFFFF",
+        fill: "black",
         opacity: 0.6,
       },
     },
