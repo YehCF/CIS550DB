@@ -263,30 +263,12 @@ const getCompanyPolitical = async(yearmin, yearmax) =>{
   return res.json();
 }
 
-/**Gets the number of times each party got the most and least votes over a span of years. Optionally, filter by state*/
-const getLeastMostVotes = async(yearmin, yearmax, state) => {
-  // don't filter by state
-  if (state == "ALL"){
-    var res = await fetch(
-        `http://${config.server_host}:${config.server_port}/elections/fewest/?minyear=${yearmin}&maxyear=${yearmax}`
-    )
-  }
-  // do filter by state
-  else{
-    var res = await fetch(
-        `http://${config.server_host}:${config.server_port}/elections/fewest/?minyear=${yearmin}&maxyear=${yearmax}&state=${state}`
-    )
-  }
-  return res.json();
-}
-
-/**Get information about the number of companies situated in states that have elected candidates of each type of party*/
-const getCompanyPolitical = async(yearmin, yearmax) =>{
+const getPopulousVotes = async (yearmin, yearmax, limit) => {
   var res = await fetch(
-      `http://${config.server_host}:${config.server_port}/elections/companies/?minyear=${yearmin}&maxyear=${yearmax}`
-  )
+      `http://${config.server_host}:${config.server_port}/elections/populous/?minyear=${yearmin}&maxyear=${yearmax}&limit=${limit}`
+  );
   return res.json();
-}
+};
 
 export {
   getCaseAndStock,
@@ -311,6 +293,7 @@ export {
   getPercentVotes,
   getLeastMostVotes,
   getCompanyPolitical,
+  getPopulousVotes
 };
 
 
