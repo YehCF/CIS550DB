@@ -1,6 +1,8 @@
 import React from "react";
 import { render } from "react-dom";
 
+
+// COVID PAGE
 import {
   Form,
   FormInput,
@@ -291,8 +293,8 @@ class CovidPage extends React.Component {
                 style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
               >
                 <h3>Deep Dive Into Covid Data</h3>
-                <div style={{ fontSize: "15px", fontWeight: "normal" }}>
-                  Select a state to see more in-depth data
+                <div style={{ fontSize: "13.5px", fontWeight: "normal" }}>
+                  Select a state from the table below to see more in-depth data
                 </div>
               </div>
             </CardTitle>

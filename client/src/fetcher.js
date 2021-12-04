@@ -163,6 +163,7 @@ const getCaseAndVax = async (state, start, end) => {
   return res.json();
 };
 
+// ROUTE FOR MAIN PAGE
 const getCaseAndVaxCulm = async (state, start, end) => {
   var res = await fetch(
     `http://${config.server_host}:${config.server_port}/covid/vax/culm?state=${state}&start=${start}&end=${end}`,
@@ -214,6 +215,6 @@ export {
   getCovidData,
   getCaseAndVax,
   getCovidSeason,
-  getCaseAndVaxCulm
+  getCaseAndVaxCulm,
   getNews
 };
