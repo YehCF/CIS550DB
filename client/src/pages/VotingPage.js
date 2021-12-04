@@ -17,7 +17,8 @@ import USAMap from "react-usa-map";
 import MenuBar from "../components/MenuBar";
 import {
     getPopulousVotes,
-    getPercentVotes
+    getPercentVotes,
+    getLeastMostVotes
 } from "../fetcher";
 
 import * as d3 from "d3";
@@ -105,6 +106,27 @@ const percentColumns = [
     }
 ]
 
+const leastMostColumns = [
+    {
+        title: "Party Name",
+        dataIndex: "party_detailed",
+        key: "party_detailed",
+        sorter: (a, b) => a.party_detailed.localeCompare(b.party_detailed)
+    },
+    {
+        title: "Elections with Least Votes",
+        dataIndex: "least_elections",
+        key: "least_elections",
+        sorter: (a, b) => a.least_elections - b.least_elections
+    },
+    {
+        title: "Elections Won",
+        dataIndex: "most_elections",
+        key: "most_elections",
+        sorter: (a, b) => a.most_elections - b.most_elections
+    }
+]
+
 class VotingPage extends React.Component {
     constructor(props) {
         super(props);
@@ -117,15 +139,20 @@ class VotingPage extends React.Component {
             currentParty: "DEMOCRAT",
             resultsPercents: {},
             resultsRankedCandidates: [],
+            resultsMostLeastVotes: [],
+            currentState: "ALL",
             //not yet used
-            selectedState: "",
             tableLoading: false,
         }
         this.handleYearChange = this.handleYearChange.bind(this);
         this.handleLimitChange = this.handleLimitChange.bind(this);
         this.handlePartyChange = this.handlePartyChange.bind(this);
+        this.handleStateChange = this.handleStateChange.bind(this);
         this.updatePopulousResults = this.updatePopulousResults.bind(this);
         this.updatePercentResults = this.updatePercentResults.bind(this);
+        this.updateMostLeastResults = this.updateMostLeastResults.bind(this);
+        this.updateMostLeastResults = this.updateMostLeastResults.bind(this);
+
    }
 
     handleYearChange(event){
@@ -136,6 +163,7 @@ class VotingPage extends React.Component {
             }, ()=>{
                 this.updatePopulousResults();
                 this.updatePercentResults();
+                this.updateMostLeastResults();
             });
 
         }
@@ -149,6 +177,9 @@ class VotingPage extends React.Component {
         this.setState({currentParty: event}, ()=>{this.updatePercentResults()});
     }
 
+    handleStateChange(event){
+        this.setState({currentState: event}, ()=> {this.updateMostLeastResults()});
+    }
     updatePopulousResults(event){
         getPopulousVotes(this.state.minyear, this.state.maxyear, this.state.limitPopulous).then((res)=>{
             var newGraphRes = []
@@ -159,6 +190,12 @@ class VotingPage extends React.Component {
                 i += 2;
             }
             this.setState({resultsPopulous: res.results, resultsPopGraph: newGraphRes});
+        })
+    }
+
+    updateMostLeastResults(event){
+        getLeastMostVotes(this.state.minyear, this.state.maxyear, this.state.currentState).then((res)=>{
+            this.setState({resultsMostLeastVotes: res.results})
         })
     }
 
@@ -194,6 +231,7 @@ class VotingPage extends React.Component {
     componentDidMount() {
         this.updatePopulousResults();
         this.updatePercentResults();
+        this.updateMostLeastResults();
     }
 
     render() {
@@ -305,10 +343,80 @@ class VotingPage extends React.Component {
                 <Card>
                     <CardBody>
                         <CardTitle>
-                            <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                                <h3> Parties that Lose and Win the Most </h3>
+                            <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh", marginBottom: "3vh"}}>
+                                <h3> 🏅 Who got the Most and Least Votes? </h3>
                             </div>
                         </CardTitle>
+                        <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh", marginBottom: "3vh"}}>
+                            The number of elections for which each party got either the most or least votes out of any party in the election.
+                            Optionally, filter by state by selecting one from the menu below.
+                        </div>
+                        <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh", marginBottom: "3vh"}}>
+                            <Select defaultValue="ALL" style={{ width: 500 }} onChange={this.handleStateChange}>
+                                <Option value="ALL">All States</Option>
+                                <Option value="AL">Alabama</Option>
+                                <Option value="AK">Alaska</Option>
+                                <Option value="AZ">Arizona</Option>
+                                <Option value="AR">Arkansas</Option>
+                                <Option value="CA">California</Option>
+                                <Option value="CO">Colorado</Option>
+                                <Option value="CT">Connecticut</Option>
+                                <Option value="DE">Delaware</Option>
+                                <Option value="FL">Florida</Option>
+                                <Option value="GA">Georgia</Option>
+                                <Option value="HI">Hawaii</Option>
+                                <Option value="ID">Idaho</Option>
+                                <Option value="IL">Illinois</Option>
+                                <Option value="IN">Indiana</Option>
+                                <Option value="IA">Iowa</Option>
+                                <Option value="KS">Kansas</Option>
+                                <Option value="KY">Kentucky</Option>
+                                <Option value="LA">Louisiana</Option>
+                                <Option value="ME">Maine</Option>
+                                <Option value="MD">Maryland</Option>
+                                <Option value="MA">Massachusetts</Option>
+                                <Option value="MI">Michigan</Option>
+                                <Option value="MN">Minnesota</Option>
+                                <Option value="MS">Mississippi</Option>
+                                <Option value="MO">Missouri</Option>
+                                <Option value="MT">Montana</Option>
+                                <Option value="NE">Nebraska</Option>
+                                <Option value="NV">Nevada</Option>
+                                <Option value="NH">New Hampshire</Option>
+                                <Option value="NJ">New Jersey</Option>
+                                <Option value="NM">New Mexico</Option>
+                                <Option value="NY">New York</Option>
+                                <Option value="NC">North Carolina</Option>
+                                <Option value="ND">North Dakota</Option>
+                                <Option value="OH">Ohio</Option>
+                                <Option value="OK">Oklahoma</Option>
+                                <Option value="OR">Oregon</Option>
+                                <Option value="PA">Pennsylvania</Option>
+                                <Option value="RI">Rhode Island</Option>
+                                <Option value="SC">South Carolina</Option>
+                                <Option value="SD">South Dakota</Option>
+                                <Option value="TN">Tennessee</Option>
+                                <Option value="TX">Texas</Option>
+                                <Option value="UT">Utah</Option>
+                                <Option value="VT">Vermont</Option>
+                                <Option value="VA">Virginia</Option>
+                                <Option value="WA">Washington</Option>
+                                <Option value="WV">West Virginia</Option>
+                                <Option value="WI">Wisconsin</Option>
+                                <Option value="WY">Wyoming</Option>
+                            </Select>
+                        </div>
+                        <Table
+                            columns={leastMostColumns}
+                            dataSource={this.state.resultsMostLeastVotes}
+                            // loading={this.state.tableLoading}
+                            pagination={{
+                                pageSizeOptions: [5, 10],
+                                defaultPageSize: 5,
+                                showQuickJumper: true,
+                            }}
+                            style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
+                        />
                     </CardBody>
                 </Card>
             </div>

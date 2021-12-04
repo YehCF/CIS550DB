@@ -854,7 +854,7 @@ async function elections_fewest(req, res) {
   const limit = req.query.limit ? req.query.limit : 0;
   const state = req.query.state;
   //first portion of the query
-  query = `SELECT party_detailed, COUNT(*) AS num_elections
+  query = `WITH least_votes AS (SELECT party_detailed, COUNT(*) AS least_elections
     FROM Elections E1
     WHERE `;
   //user can choose to only consider one state, which we can insert into the query here
@@ -870,11 +870,25 @@ async function elections_fewest(req, res) {
         WHERE E2.year = E1.year AND E2.state_abbreviation = E1.state_abbreviation
     )
     GROUP BY party_detailed
-    ORDER BY num_elections DESC`;
+    ORDER BY least_elections DESC`;
   // user can only select the top n if they choose
   if (limit > 0) {
     query = query + ` LIMIT ${limit}`;
   }
+  query = query + `), 
+  most_votes AS (SELECT party_detailed, COUNT(*) AS most_elections 
+    FROM Elections
+    WHERE year >= ${minyear} AND year <= ${maxyear} AND won = 1 `
+  if (state){
+    query = query + ` AND state_abbreviation = "${state}"`;
+  }
+  query = query + `GROUP BY party_detailed)
+  SELECT L.party_detailed, IFNULL(M.most_elections,0) AS most_elections, L.least_elections
+  FROM least_votes L LEFT JOIN most_votes M on L.party_detailed = M.party_detailed 
+  UNION
+  SELECT M.party_detailed, M.most_elections, IFNULL(L.least_elections, 0) AS least_elections
+  FROM most_votes M LEFT  JOIN least_votes L on  M.party_detailed = L.party_detailed`
+
   //make the query and log the results
   connection.query(query, function (error, results, fields) {
     if (error) {
