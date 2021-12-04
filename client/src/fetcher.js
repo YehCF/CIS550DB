@@ -154,7 +154,6 @@ const getCovidData = async (
 };
 
 const getCaseAndVax = async (state, start, end) => {
-  console.log("123123")
   var res = await fetch(
     `http://${config.server_host}:${config.server_port}/covid/vax?state=${state}&start=${start}&end=${end}`,
     {
@@ -163,6 +162,27 @@ const getCaseAndVax = async (state, start, end) => {
   );
   return res.json();
 };
+
+const getCaseAndVaxCulm = async (state, start, end) => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/covid/vax/culm?state=${state}&start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
+const getCovidSeason = async (state) => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/covid/season?state=${state}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
 
 const getNews = async (topic, page, language, sortBy) => {
 //this API have support pagination, but I think showing 10-20 news are enough
@@ -176,6 +196,7 @@ const getNews = async (topic, page, language, sortBy) => {
     console.log(error);
   }
 };
+
 export {
   getCaseAndStock,
   getAllStocks,
@@ -192,5 +213,7 @@ export {
   getYelpFilter,
   getCovidData,
   getCaseAndVax,
+  getCovidSeason,
+  getCaseAndVaxCulm
   getNews
 };
