@@ -3,11 +3,17 @@ import { Form, Card, CardBody, CardTitle, FormGroup } from "shards-react";
 import { Divider, Row, Col, DatePicker, Space, Radio } from "antd";
 import moment from "moment";
 import MenuBar from "../components/MenuBar";
-import { getAllStates, getStateVolatility, getStateCaseNorm } from "../fetcher";
+import {
+  getAllStates,
+  getStateVolatility,
+  getStateCaseNorm,
+  getYelpMap,
+} from "../fetcher";
 import USAMap from "react-usa-map";
 import { nColors, colorArray, MapLegend } from "../components/MapLegend";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import ReactLoading from "react-loading";
 
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
@@ -34,6 +40,15 @@ const ncaseRatioToColor = (ratio) => {
   const maxRatio = 1.0;
   const color_index = Math.round(
     Math.min(ratio, maxRatio) * (nColors / maxRatio)
+  );
+  return Math.min(color_index, nColors - 1);
+};
+
+// helper for yelp related info
+const numReviewsToColor = (numReview) => {
+  const maxNumReviews = 100;
+  const color_index = Math.round(
+    Math.min(numReview, maxNumReviews) * (nColors / maxNumReviews)
   );
   return Math.min(color_index, nColors - 1);
 };
@@ -70,13 +85,13 @@ class StatePage extends React.Component {
         Stock: "stockVolatility",
         Case: "",
         Vote: "",
-        Yelp: "",
+        Yelp: "numReviews",
       },
       topicToColorFunc: {
         Stock: volatilityToColor,
         Case: "",
         Vote: "",
-        Yelp: "",
+        Yelp: numReviewsToColor,
       },
       topicToLegend: {
         Stock: "Volatility",
@@ -85,6 +100,7 @@ class StatePage extends React.Component {
         Yelp: "Reviews",
       },
       legendLabels: { axis1: "Case", axis2: "Stock" },
+      mapLoading: true,
     };
 
     this.handleStateStock = this.handleStateStock.bind(this);
@@ -96,16 +112,19 @@ class StatePage extends React.Component {
   // UI
   handleCalendarChange(event) {
     if (event[0] && event[1]) {
+      this.setState({ mapLoading: true });
       this.setState({
         startDate: event[0].format(dateFormat).toString(),
         endDate: event[1].format(dateFormat).toString(),
       });
       // update data
       // case
+      this.handleStateCases(event);
       // vote
       // stock
       this.handleStateStock(event);
       // yelp
+      this.handleStateYelp(event);
     }
   }
 
@@ -158,6 +177,7 @@ class StatePage extends React.Component {
 
   initStateResults() {
     // set state abbreviations
+    this.setState({ mapLoading: true });
     getAllStates()
       .then((res) => {
         const states = {};
@@ -176,6 +196,7 @@ class StatePage extends React.Component {
           fill: colorArray[0][0], // default color
           // TODO: add other key-values for initialization
           // TODO: case, vote, yelp
+          numReviews: 0,
         };
         // initialize with clickHandler for each state
         for (const [state, fullname] of Object.entries(this.state.allStates)) {
@@ -193,8 +214,10 @@ class StatePage extends React.Component {
           };
         }
       });
+
     this.handleStateStock();
     this.handleStateCases();
+    this.handleStateYelp();
   }
 
   handleStateStock(event) {
@@ -227,13 +250,13 @@ class StatePage extends React.Component {
   }
 
   handleStateCases(event) {
-    let start = this.state.startDate;
-    let end = this.state.endDate;
+    let startDate = this.state.startDate;
+    let endDate = this.state.endDate;
     if (event && event[0] && event[1]) {
-      start = event[0].format(dateFormat).toString();
-      end = event[1].format(dateFormat).toString();
+      startDate = event[0].format(dateFormat).toString();
+      endDate = event[1].format(dateFormat).toString();
     }
-    getStateCaseNorm(start, end).then((res) => {
+    getStateCaseNorm(startDate, endDate).then((res) => {
       // collect new state results
       const newStateResults = {};
       // only update the stock related info
@@ -259,11 +282,51 @@ class StatePage extends React.Component {
   handleStateVote() {}
 
   // fetch state yelp
-  handleStateYelp() {}
+  handleStateYelp(event) {
+    let startDate = this.state.startDate;
+    let endDate = this.state.endDate;
+    if (event && event[0] && event[1]) {
+      startDate = event[0].format(dateFormat).toString();
+      endDate = event[1].format(dateFormat).toString();
+    }
+    getYelpMap(startDate, endDate).then((res) => {
+      console.log(res.results);
+      // collect new state results
+      const newStateResults = {};
+      // only update the stock related info
+      for (const info of res.results) {
+        if (info["state"]) {
+          newStateResults[info["state"]] = {
+            ...this.state.stateResults[info["state"]],
+            numReviews: info["review_count"],
+          };
+        }
+      }
+      // set state to update the map for new stock info
+      this.setState({
+        stateResults: { ...this.state.stateResults, ...newStateResults },
+      });
+      // update the color based on the Radio
+      this.setState({ mapLoading: false });
+      this.updateStateMapColor();
+    });
+  }
 
   goToStock() {
     // TO-DO
     window.location = `/stock`;
+  }
+  goToYelp() {
+    // TO-DO
+    window.location = `/yelp`;
+  }
+  goToVote() {
+    // TO-DO
+    window.location = `/vote`;
+  }
+  goToCase() {
+    // TO-DO
+    window.location = `/case`;
   }
 
   componentDidMount() {
@@ -276,7 +339,7 @@ class StatePage extends React.Component {
         <MenuBar />
         <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
           <Row>
-            <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+            <FormGroup style={{ width: "25vw", margin: "5 auto" }}>
               <Space direction="vertical" size={1}>
                 <label>Start to End Date</label>
                 <RangePicker
@@ -299,6 +362,7 @@ class StatePage extends React.Component {
                 value={this.state.selectedTopic}
                 optionType="button"
                 buttonStyle="solid"
+                style={{ width: "20vw", margin: "5 auto" }}
               />
             </FormGroup>
           </Row>
@@ -307,11 +371,28 @@ class StatePage extends React.Component {
           id="map"
           style={{ width: "70vw", margin: "0 auto", marginTop: "5vh" }}
         >
+          {this.state.mapLoading && (
+            <div
+              style={{
+                position: "relative",
+                top: "250px",
+                left: "450px",
+                height: 0,
+              }}
+            >
+              <ReactLoading
+                type={"bars"}
+                color={"#FEFEE8"}
+                height={50}
+                width={70}
+              />
+            </div>
+          )}
           <USAMap customize={this.state.stateResults} />
           <MapLegend axis={this.state.legendLabels} />
           <div
             style={{
-              width: "25vw",
+              width: "30vw",
               height: 200,
               margin: "auto auto",
               marginTop: "1vh",
@@ -336,13 +417,13 @@ class StatePage extends React.Component {
                   </Row>
                   <Row style={{ marginTop: "15px" }}>
                     - Case related sentence{" "}
-                    <a onClick={this.goToStock} class="state-card-goto">
+                    <a onClick={this.goToCase} class="state-card-goto">
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>
                   <Row style={{ marginTop: "15px" }}>
                     - Vote related sentence
-                    <a onClick={this.goToStock} class="state-card-goto">
+                    <a onClick={this.goToVote} class="state-card-goto">
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>
@@ -356,8 +437,12 @@ class StatePage extends React.Component {
                     </a>
                   </Row>
                   <Row style={{ marginTop: "15px" }}>
-                    - Vote related sentence{" "}
-                    <a onClick={this.goToStock} class="state-card-goto">
+                    - There are{" "}
+                    <span class="state-card-info">
+                      {this.state.selectedStateInfo["numReviews"]}
+                    </span>{" "}
+                    reviews!
+                    <a onClick={this.goToYelp} class="state-card-goto">
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>

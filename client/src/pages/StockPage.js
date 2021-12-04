@@ -595,16 +595,17 @@ class StockPage extends React.Component {
               {this.state.mapLoading && (
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "center",
+                    position: "relative",
+                    top: "250px",
+                    left: "450px",
                     height: 0,
                   }}
                 >
                   <ReactLoading
-                    type={"spokes"}
-                    color={"blue"}
-                    height={25}
-                    width={25}
+                    type={"bars"}
+                    color={"#FEFEE8"}
+                    height={30}
+                    width={40}
                   />
                 </div>
               )}
