@@ -839,7 +839,7 @@ async function elections(req, res) {
 
 /**
  * Route 11
- * Get the parties that most consistently get the fewest votes in an election
+ * Get the number of elections for which a given party has gotten the most and least votes
  * @param minyear the low end of the range of years to consider (default = beginning of data)
  * @param maxyear the high end of the range of years to consider (default = 2020)
  * @param state the user can optionally limit the results to a single state
@@ -852,7 +852,7 @@ async function elections_fewest(req, res) {
   const limit = req.query.limit ? req.query.limit : 0;
   const state = req.query.state;
   //first portion of the query
-  query = `SELECT party_detailed, COUNT(*) AS num_elections
+  query = `WITH least_votes AS (SELECT party_detailed, COUNT(*) AS least_elections
     FROM Elections E1
     WHERE `;
   //user can choose to only consider one state, which we can insert into the query here
@@ -868,11 +868,27 @@ async function elections_fewest(req, res) {
         WHERE E2.year = E1.year AND E2.state_abbreviation = E1.state_abbreviation
     )
     GROUP BY party_detailed
-    ORDER BY num_elections DESC`;
+    ORDER BY least_elections DESC`;
   // user can only select the top n if they choose
   if (limit > 0) {
     query = query + ` LIMIT ${limit}`;
   }
+  // now, join with information about the number of elections each party won
+  query = query + `), 
+  most_votes AS (SELECT party_detailed, COUNT(*) AS most_elections 
+    FROM Elections
+    WHERE year >= ${minyear} AND year <= ${maxyear} AND won = 1 `
+  if (state){
+    query = query + ` AND state_abbreviation = "${state}"`;
+  }
+  // do a full join so that we have information for parties that win no elections or lose no elections
+  query = query + `GROUP BY party_detailed)
+  SELECT L.party_detailed, IFNULL(M.most_elections,0) AS most_elections, L.least_elections
+  FROM least_votes L LEFT JOIN most_votes M on L.party_detailed = M.party_detailed 
+  UNION
+  SELECT M.party_detailed, M.most_elections, IFNULL(L.least_elections, 0) AS least_elections
+  FROM most_votes M LEFT  JOIN least_votes L on  M.party_detailed = L.party_detailed`
+
   //make the query and log the results
   connection.query(query, function (error, results, fields) {
     if (error) {
@@ -975,16 +991,18 @@ async function elections_populous(req, res) {
 }
 
 /**Route 14
- * Are more companies in blue or red states in a given year?
- * @param : year in which to conduct the calculation*/
+ * Are more companies in blue or red states in a given year? This considers this question between two year endpoints
+ * @param minyear the low end of the range of years to consider (default = beginning of data)
+ * @param maxyear the high end of the range of years to consider (default = 2020)*/
 async function company_political(req, res) {
   //get the user parameters
-  const year = req.query.year ? req.query.year : 2020;
+  const minyear = req.query.minyear ? req.query.minyear : 1976;
+  const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
   // write the query
-  query = `SELECT E.party_detailed, COUNT(DISTINCT C.name) AS num_companies
-        FROM Company C JOIN Elections E on C.state = E.state_abbreviation
-        WHERE E.won = 1 AND E.year = ${year}
-        GROUP BY E.party_detailed `;
+  query = `SELECT E.party_detailed, COUNT(DISTINCT C.name) AS num_companies, E.year AS year
+    FROM Company C JOIN Elections E on C.state = E.state_abbreviation
+    WHERE E.won = 1 and E. year >= ${minyear} AND E.year <= ${maxyear}
+    GROUP BY E.party_detailed, E.year`;
   //execute the query and return the results
   connection.query(query, function (error, results, fields) {
     if (error) {
