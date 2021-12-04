@@ -234,6 +234,13 @@ const getLeastMostVotes = async(yearmin, yearmax, state) => {
   return res.json();
 }
 
+const getCompanyPolitical = async(yearmin, yearmax) =>{
+  var res = await fetch(
+      `http://${config.server_host}:${config.server_port}/elections/companies/?minyear=${yearmin}&maxyear=${yearmax}`
+  )
+  return res.json();
+}
+
 export {
   getCaseAndStock,
   getAllStocks,
@@ -256,5 +263,6 @@ export {
   getPopulousVotes,
   getPartyCounts,
   getPercentVotes,
-  getLeastMostVotes
+  getLeastMostVotes,
+  getCompanyPolitical,
 };
