@@ -198,13 +198,6 @@ const getNews = async (topic, page, language, sortBy) => {
   }
 };
 
-const getPartyCounts = async(yearmin, yearmax) => {
-  var res = await fetch(
-      `http://${config.server_host}:${config.server_port}/elections?minyear=${yearmin}&maxyear=${yearmax}`,
-      {method: "GET"}
-  );
-  return res.json();
-};
 
 const getPopulousVotes = async(yearmin, yearmax, limit) => {
   var res = await fetch(
@@ -213,6 +206,7 @@ const getPopulousVotes = async(yearmin, yearmax, limit) => {
   return res.json();
 }
 
+/**Gets the total number of candidates sent and percent for a given party (for map visualization)*/
 const getPercentVotes = async(yearmin, yearmax, party) => {
   var res = await fetch(
       `http://${config.server_host}:${config.server_port}/elections/party/?minyear=${yearmin}&maxyear=${yearmax}&party=${party}`
@@ -220,12 +214,15 @@ const getPercentVotes = async(yearmin, yearmax, party) => {
   return res.json();
 }
 
+/**Gets the number of times each party got the most and least votes over a span of years. Optionally, filter by state*/
 const getLeastMostVotes = async(yearmin, yearmax, state) => {
+  // don't filter by state
   if (state == "ALL"){
     var res = await fetch(
         `http://${config.server_host}:${config.server_port}/elections/fewest/?minyear=${yearmin}&maxyear=${yearmax}`
     )
   }
+  // do filter by state
   else{
     var res = await fetch(
         `http://${config.server_host}:${config.server_port}/elections/fewest/?minyear=${yearmin}&maxyear=${yearmax}&state=${state}`
@@ -234,6 +231,7 @@ const getLeastMostVotes = async(yearmin, yearmax, state) => {
   return res.json();
 }
 
+/**Get information about the number of companies situated in states that have elected candidates of each type of party*/
 const getCompanyPolitical = async(yearmin, yearmax) =>{
   var res = await fetch(
       `http://${config.server_host}:${config.server_port}/elections/companies/?minyear=${yearmin}&maxyear=${yearmax}`
@@ -261,7 +259,6 @@ export {
   getCaseAndVaxCulm,
   getNews,
   getPopulousVotes,
-  getPartyCounts,
   getPercentVotes,
   getLeastMostVotes,
   getCompanyPolitical,
