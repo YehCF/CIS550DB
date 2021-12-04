@@ -16,7 +16,8 @@ import ReactLoading from "react-loading";
 import USAMap from "react-usa-map";
 import MenuBar from "../components/MenuBar";
 import {
-    getPopulousVotes
+    getPopulousVotes,
+    getPercentVotes
 } from "../fetcher";
 
 import * as d3 from "d3";
@@ -92,12 +93,17 @@ class VotingPage extends React.Component {
             limitPopulous: 5,
             resultsPopulous: [],
             resultsPopGraph: [],
+            currentParty: "",
+            resultsPercents: [],
+            //not yet used
             selectedState: "",
             tableLoading: false,
         }
         this.handleYearChange = this.handleYearChange.bind(this);
         this.handleLimitChange = this.handleLimitChange.bind(this);
+        this.handlePartyChange = this.handlePartyChange.bind(this);
         this.updatePopulousResults = this.updatePopulousResults.bind(this);
+        this.updatePercentResults = this.updatePercentResults.bind(this);
     }
 
     handleYearChange(event){
@@ -116,6 +122,10 @@ class VotingPage extends React.Component {
         this.setState({limitPopulous: event.target.value});
     }
 
+    handlePartyChange(event){
+        this.setState({currentParty: event.target.value});
+    }
+
     updatePopulousResults(event){
         getPopulousVotes(this.state.minyear, this.state.maxyear, this.state.limitPopulous).then((res)=>{
             var newGraphRes = []
@@ -126,6 +136,13 @@ class VotingPage extends React.Component {
                 i += 2;
             }
             this.setState({resultsPopulous: res.results, resultsPopGraph: newGraphRes});
+        })
+    }
+
+    updatePercentResults(event){
+        getPercentVotes(this.state.minyear, this.state.maxyear, this.state.currentParty).then((res)=>{
+            console.log(res.results);
+            this.setState({resultsPercents: res.results});
         })
     }
 
@@ -141,11 +158,11 @@ class VotingPage extends React.Component {
                     <CardBody style={{backgroundColor: '#f7f7f7'}}>
                         <CardTitle>
                             <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                                <h3>Explore Elections!</h3>
+                                <h3>Explore Elections</h3>
                             </div>
                         </CardTitle>
                         <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                            <p>Overall Year Selection</p>
+                            <p>Pick a year range! You are currently considering election data between years {this.state.minyear} and {this.state.maxyear}.</p>
                         </div>
                         <Slider style = {{ width: "80vw", margin: "0 auto", marginTop: "5vh", marginBottom: "5vh", color: '#dedede'}} range defaultValue={[1976, 2020]} min={1976} max={2020} marks={marks} onChange={this.handleYearChange}></Slider>
                     </CardBody>
@@ -154,7 +171,47 @@ class VotingPage extends React.Component {
                     <CardBody>
                         <CardTitle>
                             <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                                <h3>Most Populous vs. Least Populous States</h3>
+                                <h3> 🇺🇸 Pick a Party!</h3>
+                            </div>
+                        </CardTitle>
+                        <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
+                            <Row>
+                                <Col flex={2}>
+                                    <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                                        <p> Type in the name of a political party to look at how well this party has
+                                            done across states between {this.state.minyear} and {this.state.maxyear}.
+                                        </p>
+                                    </FormGroup>
+                                </Col>
+                                <Col flex={2}>
+                                    <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                                        <label>Political party</label>
+                                        <FormInput
+                                            placeholder="e.g. democrat"
+                                            value={this.state.currentParty}
+                                            onChange={this.handlePartyChange} />
+                                    </FormGroup>
+                                </Col>
+
+                                <Col flex={2}>
+                                    <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
+                                        <Button
+                                            style={{ marginTop: "3vh", margin: "5 auto" }}
+                                            onClick={this.updatePopulousResults}
+                                        >
+                                            Apply
+                                        </Button>
+                                    </FormGroup>
+                                </Col>
+                            </Row>
+                        </Form>
+                    </CardBody>
+                </Card>
+                <Card>
+                    <CardBody>
+                        <CardTitle>
+                            <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
+                                <h3> 🏙️ Most Populous  vs. Least Populous States </h3>
                             </div>
                         </CardTitle>
 
@@ -162,7 +219,7 @@ class VotingPage extends React.Component {
                             <Row>
                                 <Col flex={2}>
                                     <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                                        <p> Look at how the k most and least populous states have voted between {this.state.minyear} and {this.state.maxyear}.
+                                        <p> Compare how the k most-populous and k least-populous states have voted between {this.state.minyear} and {this.state.maxyear}.
                                             Specify k in the box to the right!</p>
                                     </FormGroup>
                                 </Col>
@@ -192,17 +249,17 @@ class VotingPage extends React.Component {
                         <div style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
                             <DemoColumn data={this.state.resultsPopGraph} />
                         </div>
-                        <Table
-                            columns={populousColumns}
-                            dataSource={this.state.resultsPopulous}
-                            loading={this.state.tableLoading}
-                            pagination={{
-                                pageSizeOptions: [5, 10],
-                                defaultPageSize: 5,
-                                showQuickJumper: true,
-                            }}
-                            style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
-                        />
+                        {/*<Table*/}
+                        {/*    columns={populousColumns}*/}
+                        {/*    dataSource={this.state.resultsPopulous}*/}
+                        {/*    loading={this.state.tableLoading}*/}
+                        {/*    pagination={{*/}
+                        {/*        pageSizeOptions: [5, 10],*/}
+                        {/*        defaultPageSize: 5,*/}
+                        {/*        showQuickJumper: true,*/}
+                        {/*    }}*/}
+                        {/*    style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}*/}
+                        {/*/>*/}
                     </CardBody>
                 </Card>
             </div>
