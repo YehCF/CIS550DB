@@ -21,6 +21,31 @@ import {
 } from "../fetcher";
 
 import * as d3 from "d3";
+import {nColors, colorArray, MapLegend} from "../components/MapLegend";
+
+const nIndustryColors = 100;
+const colorScaler = d3
+    .scaleLinear()
+    .range(["#f7f7f7", "#b40404"])
+    .domain([0, nIndustryColors - 1]);
+let industryColorArray = [];
+for (let i = 0; i < nIndustryColors; i++) {
+    industryColorArray[i] = colorScaler(i);
+}
+
+const percentToColor = (volatility) => {
+    console.log(Math.floor(Math.max(0, 100*volatility-1)), industryColorArray[Math.floor(Math.max(0, 100*volatility-1))])
+    return industryColorArray[Math.floor(Math.max(0, 100*volatility-1))];
+    // const maxVolatilityRatio = 1.0;
+    // const color_index = Math.round(
+    //     Math.min(volatility, maxVolatilityRatio) * (nColors / maxVolatilityRatio)
+    // );
+    // return colorArray[1][Math.min(color_index, nColors - 1)];
+};
+
+
+
+
 
 /**The Bar Chart we'll use to Look at Populations*/
 const DemoColumn = (res) => {
@@ -93,8 +118,8 @@ class VotingPage extends React.Component {
             limitPopulous: 5,
             resultsPopulous: [],
             resultsPopGraph: [],
-            currentParty: "",
-            resultsPercents: [],
+            currentParty: "democrat",
+            resultsPercents: {},
             //not yet used
             selectedState: "",
             tableLoading: false,
@@ -103,8 +128,9 @@ class VotingPage extends React.Component {
         this.handleLimitChange = this.handleLimitChange.bind(this);
         this.handlePartyChange = this.handlePartyChange.bind(this);
         this.updatePopulousResults = this.updatePopulousResults.bind(this);
+        this.initPercentResults = this.initPercentResults.bind(this);
         this.updatePercentResults = this.updatePercentResults.bind(this);
-    }
+   }
 
     handleYearChange(event){
         if (event[0] && event[1]) {
@@ -113,6 +139,7 @@ class VotingPage extends React.Component {
                 maxyear: event[1]
             }, ()=>{
                 this.updatePopulousResults();
+                this.updatePercentResults();
             });
 
         }
@@ -139,15 +166,39 @@ class VotingPage extends React.Component {
         })
     }
 
-    updatePercentResults(event){
+    initPercentResults(event){
         getPercentVotes(this.state.minyear, this.state.maxyear, this.state.currentParty).then((res)=>{
-            console.log(res.results);
-            this.setState({resultsPercents: res.results});
+            for (const obj of res.results){
+                this.state.resultsPercents[obj["state_abbreviation"]] = {
+                    percent: obj.percent_vote,
+                    fill: percentToColor(obj.percent_vote)
+                }
+            }
+            console.log(this.state.resultsPercents)
         })
+    }
+
+    updatePercentResults(event){
+        console.log(this.state.resultsPercents);
+        getPercentVotes(this.state.minyear, this.state.maxyear, this.state.currentParty).then((res)=>{
+            let newPercents = {};
+            for (const obj of res.results){
+                newPercents[obj["state_abbreviation"]] = {
+                    percent: obj.percent_vote,
+                    fill: percentToColor(obj.percent_vote)
+                }
+            }
+            this.setState({
+                resultsPercents: {...this.state.resultsPercents, ...newPercents}
+            })
+            }
+        )
     }
 
     componentDidMount() {
         this.updatePopulousResults();
+        this.initPercentResults();
+        this.updatePercentResults();
     }
 
     render() {
@@ -197,7 +248,7 @@ class VotingPage extends React.Component {
                                     <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
                                         <Button
                                             style={{ marginTop: "3vh", margin: "5 auto" }}
-                                            onClick={this.updatePopulousResults}
+                                            onClick={this.updatePercentResults}
                                         >
                                             Apply
                                         </Button>
@@ -205,6 +256,15 @@ class VotingPage extends React.Component {
                                 </Col>
                             </Row>
                         </Form>
+                        <Container
+                            style={{
+                                width: "80vw",
+                                margin: "auto auto",
+                                marginTop: "5vh",
+                                alignItems: "center",
+                            }}>
+                            <USAMap customize={this.state.resultsPercents}/>
+                        </Container>
                     </CardBody>
                 </Card>
                 <Card>
