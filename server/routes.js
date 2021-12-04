@@ -864,8 +864,9 @@ async function elections_percent(req, res){
         SELECT state_abbreviation FROM specific_having
         )
 )
-SELECT total_wins.state_abbreviation, specific_wins / total_wins AS percent_vote
-FROM (SELECT * FROM specific_having UNION SELECT * FROM not_having) spec JOIN total_wins ON spec.state_abbreviation = total_wins.state_abbreviation`
+SELECT total_wins.state_abbreviation, S.name AS name, specific_wins AS num_candidates, specific_wins / total_wins AS percent_vote
+FROM (SELECT * FROM specific_having UNION SELECT * FROM not_having) spec JOIN total_wins ON spec.state_abbreviation = total_wins.state_abbreviation JOIN State S ON total_wins.state_abbreviation = S.abbreviation
+ORDER BY num_candidates DESC`
   //make the query and log the results
   connection.query(query, function (error, results, fields) {
     if (error) {
@@ -950,7 +951,7 @@ async function elections_most_party(req, res) {
         WHERE NOT EXISTS(
             SELECT * FROM Elections E2
             WHERE E1.state_abbreviation = E2.state_abbreviation 
-            AND E2.year >= ${minyear} AND E2.year <= ${maxyear} AND E2.won = 1 AND E2.stage = "gen" and E2.party_detailed = "${party}" 
+            AND E2.year >= ${minyear} AND E2.year <= ${maxyear} AND E2.won = 1 AND E2.stage = "gen" and E2.party_detailed LIKE "%${party}%" 
         )
     )
     SELECT S.abbreviation, S.name, T.num_candidates
