@@ -215,7 +215,7 @@ const getPopulousVotes = async(yearmin, yearmax, limit) => {
 
 const getPercentVotes = async(yearmin, yearmax, party) => {
   var res = await fetch(
-      `http://${config.server_host}:${config.server_port}/elections/percent/?minyear=${yearmin}&maxyear=${yearmax}&party=${party}`
+      `http://${config.server_host}:${config.server_port}/elections/party/?minyear=${yearmin}&maxyear=${yearmax}&party=${party}`
   )
   return res.json();
 }

@@ -35,7 +35,7 @@ for (let i = 0; i < nIndustryColors; i++) {
 }
 
 const percentToColor = (volatility) => {
-    return industryColorArray[Math.floor(Math.max(0, 100*volatility-1))];
+    return industryColorArray[Math.floor(Math.max(0, volatility-1))];
 };
 
 
@@ -83,26 +83,6 @@ const marks = {
     2020: '2020'
 };
 
-const populousColumns = [
-    {
-        title: "Party",
-        dataIndex: "party_detailed",
-        key: "party_detailed",
-        sorter: (a, b) => a.party_detailed.localeCompare(b.party_detailed),
-    },
-    {
-        title: "Least Populous Votes",
-        dataIndex: "least_populous_count",
-        key: "least_populous_count",
-        sorter: (a, b) => a.least_populous_count - b.least_populous_count
-    },
-    {
-        title: "Most Populous Votes",
-        dataIndex: "most_populous_count",
-        key: "most_populous_count",
-        sorter: (a, b) => a.most_populous_count - b.most_populous_count
-    }
-]
 
 const percentColumns = [
     {
@@ -112,15 +92,16 @@ const percentColumns = [
         sorter: (a, b) => a.name.localeCompare(b.name)
     },
     {
-        title: "Abbreviation",
-        dataIndex: "state_abbreviation",
-        key: "state_abbreviation"
-    },
-    {
         title: "Number of Candidates",
         dataIndex: "num_candidates",
         key: "num_candidates",
         sorter: (a, b) => a.num_candidates - b.num_candidates
+    },
+    {
+        title: "Percent of Candidates",
+        dataIndex: "percent_vote",
+        key: "percent_vote",
+        sorter: (a, b) => a.percent_vote - b.percent_vote
     }
 ]
 
