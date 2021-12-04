@@ -34,13 +34,7 @@ for (let i = 0; i < nIndustryColors; i++) {
 }
 
 const percentToColor = (volatility) => {
-    console.log(Math.floor(Math.max(0, 100*volatility-1)), industryColorArray[Math.floor(Math.max(0, 100*volatility-1))])
     return industryColorArray[Math.floor(Math.max(0, 100*volatility-1))];
-    // const maxVolatilityRatio = 1.0;
-    // const color_index = Math.round(
-    //     Math.min(volatility, maxVolatilityRatio) * (nColors / maxVolatilityRatio)
-    // );
-    // return colorArray[1][Math.min(color_index, nColors - 1)];
 };
 
 
@@ -109,6 +103,26 @@ const populousColumns = [
     }
 ]
 
+const percentColumns = [
+    {
+        title: "State Name",
+        dataIndex: "name",
+        key: "name",
+        sorter: (a, b) => a.name.localeCompare(b.name)
+    },
+    {
+        title: "Abbreviation",
+        dataIndex: "state_abbreviation",
+        key: "state_abbreviation"
+    },
+    {
+        title: "Number of Candidates",
+        dataIndex: "num_candidates",
+        key: "num_candidates",
+        sorter: (a, b) => a.num_candidates - b.num_candidates
+    }
+]
+
 class VotingPage extends React.Component {
     constructor(props) {
         super(props);
@@ -120,6 +134,7 @@ class VotingPage extends React.Component {
             resultsPopGraph: [],
             currentParty: "democrat",
             resultsPercents: {},
+            resultsRankedCandidates: [],
             //not yet used
             selectedState: "",
             tableLoading: false,
@@ -128,7 +143,6 @@ class VotingPage extends React.Component {
         this.handleLimitChange = this.handleLimitChange.bind(this);
         this.handlePartyChange = this.handlePartyChange.bind(this);
         this.updatePopulousResults = this.updatePopulousResults.bind(this);
-        this.initPercentResults = this.initPercentResults.bind(this);
         this.updatePercentResults = this.updatePercentResults.bind(this);
    }
 
@@ -166,20 +180,19 @@ class VotingPage extends React.Component {
         })
     }
 
-    initPercentResults(event){
-        getPercentVotes(this.state.minyear, this.state.maxyear, this.state.currentParty).then((res)=>{
-            for (const obj of res.results){
-                this.state.resultsPercents[obj["state_abbreviation"]] = {
-                    percent: obj.percent_vote,
-                    fill: percentToColor(obj.percent_vote)
-                }
-            }
-            console.log(this.state.resultsPercents)
-        })
-    }
+    // initPercentResults(event){
+    //     getPercentVotes(this.state.minyear, this.state.maxyear, this.state.currentParty).then((res)=>{
+    //         for (const obj of res.results){
+    //             this.state.resultsPercents[obj["state_abbreviation"]] = {
+    //                 percent: obj.percent_vote,
+    //                 fill: percentToColor(obj.percent_vote)
+    //             }
+    //         }
+    //         console.log(this.state.resultsPercents)
+    //     })
+    // }
 
     updatePercentResults(event){
-        console.log(this.state.resultsPercents);
         getPercentVotes(this.state.minyear, this.state.maxyear, this.state.currentParty).then((res)=>{
             let newPercents = {};
             for (const obj of res.results){
@@ -189,7 +202,8 @@ class VotingPage extends React.Component {
                 }
             }
             this.setState({
-                resultsPercents: {...this.state.resultsPercents, ...newPercents}
+                resultsPercents: newPercents,
+                resultsRankedCandidates: res.results
             })
             }
         )
@@ -197,7 +211,6 @@ class VotingPage extends React.Component {
 
     componentDidMount() {
         this.updatePopulousResults();
-        this.initPercentResults();
         this.updatePercentResults();
     }
 
@@ -209,7 +222,7 @@ class VotingPage extends React.Component {
                     <CardBody style={{backgroundColor: '#f7f7f7'}}>
                         <CardTitle>
                             <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                                <h3>Explore Elections</h3>
+                                <h3>Explore Elections: Senate Elections 1976-2020</h3>
                             </div>
                         </CardTitle>
                         <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
@@ -261,10 +274,25 @@ class VotingPage extends React.Component {
                                 width: "80vw",
                                 margin: "auto auto",
                                 marginTop: "5vh",
+                                marginBottom: "5vh",
                                 alignItems: "center",
                             }}>
                             <USAMap customize={this.state.resultsPercents}/>
                         </Container>
+                        <div style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
+                            <h4>How many {this.state.currentParty} candidates did each state send to the Senate between {this.state.minyear} and {this.state.maxyear}?</h4>
+                        </div>
+                        <Table
+                            columns={percentColumns}
+                            dataSource={this.state.resultsRankedCandidates}
+                            // loading={this.state.tableLoading}
+                            pagination={{
+                                pageSizeOptions: [5, 10],
+                                defaultPageSize: 5,
+                                showQuickJumper: true,
+                            }}
+                            style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
+                        />
                     </CardBody>
                 </Card>
                 <Card>
