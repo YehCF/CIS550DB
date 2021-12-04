@@ -459,6 +459,7 @@ var yelp_period;
  * Get time range when initialize
  */
 const getTime = () => {
+ return new Promise(resolve =>{
   connection.query(
     `
     SELECT DATE_FORMAT(MIN(review_date), "%Y-%m-%d") AS start_date, DATE_FORMAT(MAX(review_date), "%Y-%m-%d") AS end_date
@@ -467,15 +468,18 @@ const getTime = () => {
     function (error, results) {
       if (error) {
         console.log(error);
+        resolve();
       } else if (results) {
         // yelp_start_date = results[0].start_date;
         // console.log(yelp_start_date);
         // yelp_last_date = results[0].end_date;
         // console.log(yelp_last_date);
         yelp_period = results;
+        resolve();
       }
     }
   );
+ })
 };
 getTime();
 
@@ -580,6 +584,8 @@ Examples:
   http://localhost:8080/yelp/time
 */
 async function yelp_time(req, res) {
+  if(!yelp_period)
+    await getTime();
   res.json({ results: yelp_period });
 }
 
