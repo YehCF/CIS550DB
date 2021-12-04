@@ -839,7 +839,7 @@ async function elections(req, res) {
 
 /**
  * Route 11
- * Get the parties that most consistently get the fewest votes in an election
+ * Get the number of elections for which a given party has gotten the most and least votes
  * @param minyear the low end of the range of years to consider (default = beginning of data)
  * @param maxyear the high end of the range of years to consider (default = 2020)
  * @param state the user can optionally limit the results to a single state
@@ -873,6 +873,7 @@ async function elections_fewest(req, res) {
   if (limit > 0) {
     query = query + ` LIMIT ${limit}`;
   }
+  // now, join with information about the number of elections each party won
   query = query + `), 
   most_votes AS (SELECT party_detailed, COUNT(*) AS most_elections 
     FROM Elections
@@ -880,6 +881,7 @@ async function elections_fewest(req, res) {
   if (state){
     query = query + ` AND state_abbreviation = "${state}"`;
   }
+  // do a full join so that we have information for parties that win no elections or lose no elections
   query = query + `GROUP BY party_detailed)
   SELECT L.party_detailed, IFNULL(M.most_elections,0) AS most_elections, L.least_elections
   FROM least_votes L LEFT JOIN most_votes M on L.party_detailed = M.party_detailed 
@@ -989,7 +991,7 @@ async function elections_populous(req, res) {
 }
 
 /**Route 14
- * Are more companies in blue or red states in a given year?
+ * Are more companies in blue or red states in a given year? This considers this question between two year endpoints
  * @param minyear the low end of the range of years to consider (default = beginning of data)
  * @param maxyear the high end of the range of years to consider (default = 2020)*/
 async function company_political(req, res) {
