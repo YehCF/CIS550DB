@@ -497,20 +497,17 @@ async function yelp_map(req, res) {
   const endDate = req.query.end ? req.query.end : yelp_period[0].end_date;
   connection.query(
     `
-    SELECT s.abbreviation AS state, IFNULL(review_count, 0) AS review_count
-    FROM State s LEFT JOIN
-    (
-      SELECT state, COUNT(b.id) AS review_count
-      FROM Business b JOIN
-          (
-              SELECT business_id
-              FROM Review
-              WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
-          )rev
-      ON b.id = rev.business_id
-      GROUP BY state
-    )rc
-    ON s.abbreviation=rc.state`,
+    SELECT abbreviation AS state, IFNULL(SUM(review_count), 0) AS review_count
+	FROM State s
+	LEFT JOIN
+	    (
+		SELECT review_count, state, review_date
+		FROM Review_BId_State
+		WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+	    )sd
+	ON s.abbreviation = sd.state
+	GROUP BY abbreviation;
+	`,
     function (error, results, fields) {
       if (error) {
         console.log(error);
@@ -672,12 +669,7 @@ async function yelp_filter(req, res) {
     //state is not null
     connection.query(
       `
-      WITH match_state AS
-	(
-	  SELECT id
-	  FROM Business
-	  WHERE state = '${state}'
-	), covid_cases AS
+      WITH covid_cases AS
 	(
 	  SELECT submission_date, SUM(new_case) AS new_case
 	  FROM Day D
@@ -686,15 +678,15 @@ async function yelp_filter(req, res) {
 	  GROUP BY submission_date
 	), review_business AS
 	(
-	  SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
-	  FROM Review r JOIN match_state b
-	  ON r.business_id=b.id
-	  WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
-	  GROUP BY review_date
+	    SELECT review_date, SUM(total_star) / SUM(review_count) AS average_star, SUM(review_count) AS review_count
+	    FROM Review_BId_State
+	    WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+	    AND state = '${state}'
+	    GROUP BY review_date
 	)
 	SELECT *
 	FROM (
-	     SELECT average_star, review_count, review_date, IFNULL(new_case, 0) AS new_case
+	     SELECT average_star, review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date, IFNULL(new_case, 0) AS new_case
 	     FROM review_business rb LEFT JOIN covid_cases cc
 	     ON cc.submission_date = rb.review_date
 	 )a
@@ -706,6 +698,7 @@ async function yelp_filter(req, res) {
 	     WHERE rb.review_date IS NULL
 	 )
 	ORDER BY review_date;
+
      `,
       function (error, results, fields) {
         if (error) {
@@ -781,10 +774,10 @@ async function yelp_filter(req, res) {
 	),
 	review_count AS
 	(
-	  SELECT AVG(stars) AS average_star, COUNT(r.id) AS review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date
-	  FROM Review r
-	  WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
-	  GROUP BY review_date
+	    SELECT review_date, SUM(total_star) / SUM(review_count) AS average_star, SUM(review_count) AS review_count
+	    FROM Review_BId_State
+	    WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
+	    GROUP BY review_date
 	)
 	SELECT *
 	FROM (
@@ -794,7 +787,7 @@ async function yelp_filter(req, res) {
 	 )a
 	UNION ALL
 	(
-	    SELECT average_star, review_count, review_date, IFNULL(D.new_case, 0) AS new_case
+	    SELECT average_star, review_count, DATE_FORMAT(review_date, "%Y-%m-%d") AS review_date, IFNULL(D.new_case, 0) AS new_case
 	    FROM covid_cases D RIGHT Join review_count r
 	    ON D.submission_date = r.review_date
 	    WHERE D.submission_date IS NULL
