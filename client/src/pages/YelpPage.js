@@ -405,6 +405,7 @@ class YelpPage extends React.Component {
                             )
                         }
                         </Carousel>
+                        <br></br>
                     </Form>
                     
                     
