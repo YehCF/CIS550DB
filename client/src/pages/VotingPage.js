@@ -10,7 +10,7 @@ import {
     Container,
 } from "shards-react";
 import { DualAxes, Column } from "@ant-design/charts";
-import { Row, Col, DatePicker, Space, Divider, Table, Slider} from "antd";
+import { Row, Col, DatePicker, Space, Divider, Table, Slider, Select} from "antd";
 import moment from "moment";
 import ReactLoading from "react-loading";
 import USAMap from "react-usa-map";
@@ -24,6 +24,7 @@ import * as d3 from "d3";
 import {nColors, colorArray, MapLegend} from "../components/MapLegend";
 
 const nIndustryColors = 100;
+const { Option } = Select;
 const colorScaler = d3
     .scaleLinear()
     .range(["#f7f7f7", "#b40404"])
@@ -164,7 +165,7 @@ class VotingPage extends React.Component {
     }
 
     handlePartyChange(event){
-        this.setState({currentParty: event.target.value});
+        this.setState({currentParty: event}, ()=>{this.updatePercentResults()});
     }
 
     updatePopulousResults(event){
@@ -238,37 +239,18 @@ class VotingPage extends React.Component {
                                 <h3> 🇺🇸 Pick a Party!</h3>
                             </div>
                         </CardTitle>
-                        <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
-                            <Row>
-                                <Col flex={2}>
-                                    <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                                        <p> Type in the name of a political party to look at how well this party has
-                                            done across states between {this.state.minyear} and {this.state.maxyear}.
-                                        </p>
-                                    </FormGroup>
-                                </Col>
-                                <Col flex={2}>
-                                    <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                                        <label>Political party</label>
-                                        <FormInput
-                                            placeholder="e.g. democrat"
-                                            value={this.state.currentParty}
-                                            onChange={this.handlePartyChange} />
-                                    </FormGroup>
-                                </Col>
-
-                                <Col flex={2}>
-                                    <FormGroup style={{ width: "15vw", margin: "5 auto" }}>
-                                        <Button
-                                            style={{ marginTop: "3vh", margin: "5 auto" }}
-                                            onClick={this.updatePercentResults}
-                                        >
-                                            Apply
-                                        </Button>
-                                    </FormGroup>
-                                </Col>
-                            </Row>
-                        </Form>
+                        <div style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
+                            <p>Select a party from the menu below to learn more about its popularity across states!</p>
+                        <Select defaultValue="DEMOCRAT" style={{ width: 500 }} onChange={this.handlePartyChange}>
+                            <Option value="DEMOCRAT">Democrat</Option>
+                            <Option value="REPUBLICAN">Republican</Option>
+                            <Option value="INDEPENDENT">Independent</Option>
+                            <Option value="DEMOCRATIC-FARMER-LABOR">Democratic Farmer Labor</Option>
+                            <Option value="DEMOCRATIC-NONPARTISAN LEAGUE">Democratic-Nonpartisan League</Option>
+                            <Option value="CONNECTICUT FOR LIEBERMAN">Connecticut for Lieberman</Option>
+                            <Option value="INDEPENDENT FOR MAINE">Independent for Maine</Option>
+                        </Select>
+                        </div>
                         <Container
                             style={{
                                 width: "80vw",
@@ -280,7 +262,7 @@ class VotingPage extends React.Component {
                             <USAMap customize={this.state.resultsPercents}/>
                         </Container>
                         <div style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
-                            <h4>How many {this.state.currentParty} candidates did each state send to the Senate between {this.state.minyear} and {this.state.maxyear}?</h4>
+                            <h4>How many {this.state.currentParty.toLowerCase()} candidates did each state send to the Senate between {this.state.minyear} and {this.state.maxyear}?</h4>
                         </div>
                         <Table
                             columns={percentColumns}
