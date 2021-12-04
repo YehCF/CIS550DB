@@ -839,6 +839,46 @@ async function elections(req, res) {
   });
 }
 
+
+/**Route 10 version 2
+ * Get the percent of wins for a single party
+ * @param minyear = low end of year range to consider (default=2020)
+ * @param maxyear = high end of range to consider (default=2020) */
+async function elections_percent(req, res){
+  const minyear = req.query.minyear ? req.query.minyear : 1976;
+  const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
+  const party = req.query.party;
+  query = `WITH total_wins AS (
+    SELECT state_abbreviation, COUNT(*) AS total_wins
+    FROM Elections
+    WHERE year >= ${minyear} AND year <= ${maxyear} AND won = 1
+    GROUP BY state_abbreviation
+), specific_having AS (
+    SELECT state_abbreviation, COUNT(*) AS specific_wins
+    FROM Elections
+    WHERE year >= ${minyear} AND year <= ${maxyear} and won = 1 AND party_detailed LIKE "%${party}%"
+    GROUP BY  state_abbreviation
+), not_having AS (
+    SELECT DISTINCT state_abbreviation, 0 AS specific_wins
+    FROM Elections
+    WHERE state_abbreviation NOT IN(
+        SELECT state_abbreviation FROM specific_having
+        )
+)
+SELECT total_wins.state_abbreviation, specific_wins / total_wins AS percent_vote
+FROM (SELECT * FROM specific_having UNION SELECT * FROM not_having) spec JOIN total_wins ON spec.state_abbreviation = total_wins.state_abbreviation`
+  //make the query and log the results
+  connection.query(query, function (error, results, fields) {
+    if (error) {
+      console.log(error);
+      res.json({ error: error });
+    } else if (results) {
+      res.json({ results: results });
+    }
+  });
+}
+
+
 /**
  * Route 11
  * Get the parties that most consistently get the fewest votes in an election
@@ -1316,6 +1356,7 @@ module.exports = {
   elections,
   elections_fewest,
   elections_most_party,
+  elections_percent,
   elections_populous,
   company_political,
   covid_gen,
