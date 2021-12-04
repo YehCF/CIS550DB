@@ -133,7 +133,7 @@ class VotingPage extends React.Component {
             limitPopulous: 5,
             resultsPopulous: [],
             resultsPopGraph: [],
-            currentParty: "democrat",
+            currentParty: "DEMOCRAT",
             resultsPercents: {},
             resultsRankedCandidates: [],
             //not yet used
@@ -223,11 +223,11 @@ class VotingPage extends React.Component {
                     <CardBody style={{backgroundColor: '#f7f7f7'}}>
                         <CardTitle>
                             <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                                <h3>Explore Elections: Senate Elections 1976-2020</h3>
+                                <h3>Explore Elections</h3>
                             </div>
                         </CardTitle>
                         <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
-                            <p>Pick a year range! You are currently considering election data between years {this.state.minyear} and {this.state.maxyear}.</p>
+                            <p>Pick a year range! You are currently considering senate election data between years {this.state.minyear} and {this.state.maxyear}.</p>
                         </div>
                         <Slider style = {{ width: "80vw", margin: "0 auto", marginTop: "5vh", marginBottom: "5vh", color: '#dedede'}} range defaultValue={[1976, 2020]} min={1976} max={2020} marks={marks} onChange={this.handleYearChange}></Slider>
                     </CardBody>
@@ -319,17 +319,15 @@ class VotingPage extends React.Component {
                         <div style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
                             <DemoColumn data={this.state.resultsPopGraph} />
                         </div>
-                        {/*<Table*/}
-                        {/*    columns={populousColumns}*/}
-                        {/*    dataSource={this.state.resultsPopulous}*/}
-                        {/*    loading={this.state.tableLoading}*/}
-                        {/*    pagination={{*/}
-                        {/*        pageSizeOptions: [5, 10],*/}
-                        {/*        defaultPageSize: 5,*/}
-                        {/*        showQuickJumper: true,*/}
-                        {/*    }}*/}
-                        {/*    style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}*/}
-                        {/*/>*/}
+                    </CardBody>
+                </Card>
+                <Card>
+                    <CardBody>
+                        <CardTitle>
+                            <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh"}}>
+                                <h3> Parties that Lose and Win the Most </h3>
+                            </div>
+                        </CardTitle>
                     </CardBody>
                 </Card>
             </div>
