@@ -10,7 +10,7 @@ import {
   Container,
 } from "shards-react";
 
-import { Row, Col, DatePicker, Space, Divider, Table } from "antd";
+import { Row, Col, DatePicker, Space, Table } from "antd";
 
 import moment from "moment";
 
@@ -31,12 +31,21 @@ import {
 } from "../fetcher";
 
 import * as d3 from "d3";
+import rd3 from "react-d3-library";
 
+// The setting for DatePicker
 const dateFormat = "YYYY-MM-DD";
 const { RangePicker } = DatePicker;
 const default_period = ["2020-01-01", "2020-12-31"];
 
+// The colors for USA State Map vs. Industry Volatility
 const nIndustryColors = 11;
+// const industryColorArray = colormap({
+//   colormap: "oxygen",
+//   nshades: nIndustryColors,
+//   format: "hex",
+//   alpha: 1.0,
+// });
 const colorScaler = d3
   .scaleLinear()
   .range(["#e8e8e8", "#5ac8c8"])
@@ -45,8 +54,77 @@ let industryColorArray = [];
 for (let i = 0; i < nIndustryColors; i++) {
   industryColorArray[i] = colorScaler(i);
 }
-console.log(industryColorArray);
 
+// Categorical Map Legend with D3
+const industryLegend = [
+  "Health Care",
+  "Industrials",
+  "Consumer Discretionary",
+  "Information Technology",
+  "Consumer Staples",
+  "Utilities",
+  "Financials",
+  "Materials",
+  "Real Estate",
+  "Energy",
+  "Communication Services",
+];
+const node = document.createElement("div");
+const svgLegend = d3
+  .select(node)
+  .append("svg")
+  .attr("width", 300)
+  .attr("height", 600)
+  .attr("style", "position: relative; top: -550px; left: 950px;");
+const data = d3.range(nIndustryColors).reduce(function (arr, elem) {
+  return arr.concat(
+    d3.range(nIndustryColors).map(function (d) {
+      return {
+        col: elem,
+      };
+    })
+  );
+}, []);
+svgLegend
+  .selectAll(null)
+  .data(data)
+  .enter()
+  .append("rect")
+  .attr("x", 0)
+  .attr("y", (d) => d.col * 50)
+  .attr("width", 30)
+  .attr("height", 30)
+  .attr("fill", function (d) {
+    return industryColorArray[d.col];
+  });
+svgLegend
+  .selectAll(null)
+  .data(data)
+  .enter()
+  .append("text")
+  .attr("x", 40)
+  .attr("y", (d) => d.col * 50 + 20)
+  .text(function (d) {
+    return industryLegend[d.col];
+  });
+
+const RD3Component = rd3.Component;
+class CategoricalMapLegend extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { d3: "" };
+  }
+
+  componentDidMount() {
+    this.setState({ d3: svgLegend.node() });
+  }
+
+  render() {
+    return <RD3Component data={this.state.d3} />;
+  }
+}
+
+// Stock Table Column Format
 const stockColumns = [
   {
     title: "Code",
@@ -104,6 +182,7 @@ const stockColumns = [
   },
 ];
 
+// Stock vs. Case Dual Axes Plot
 const StockDualAxes = (data) => {
   var config = {
     data: [data.data, data.data],
@@ -229,7 +308,6 @@ class StockPage extends React.Component {
       this.state.threshold,
       this.state.corr
     ).then((res) => {
-      console.log(res.results);
       this.setState({ stockTableResults: res.results });
       this.setState({ tableLoading: false });
     });
@@ -275,6 +353,7 @@ class StockPage extends React.Component {
           };
         }
       }
+      this.updateStateIndustryResults();
     });
   }
 
@@ -314,7 +393,6 @@ class StockPage extends React.Component {
       });
       this.setState({ mapLoading: false });
     });
-    console.log("inn");
   }
 
   componentDidMount() {
@@ -325,7 +403,6 @@ class StockPage extends React.Component {
     });
     this.initIndustries();
     this.initStateIndustryResults();
-    this.updateStateIndustryResults();
   }
 
   render() {
@@ -333,7 +410,7 @@ class StockPage extends React.Component {
       <div>
         <MenuBar />
         <Card>
-          <CardBody>
+          <CardBody style={{ backgroundColor: "#f7f7f7" }}>
             <CardTitle>
               <div
                 style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
@@ -414,7 +491,8 @@ class StockPage extends React.Component {
                 </Col>
               </Row>
             </Form>
-            <Divider />
+          </CardBody>
+          <CardBody>
             <Table
               onRow={(record, rowIndex) => {
                 return {
@@ -452,13 +530,10 @@ class StockPage extends React.Component {
                 </div>
               </div>
             )}
-            {/* <div>
-          <Divider />
-        </div> */}
           </CardBody>
         </Card>
         <Card>
-          <CardBody>
+          <CardBody style={{ backgroundColor: "#f7f7f7" }}>
             <CardTitle>
               <div
                 style={{ width: "80vw", margin: "auto auto", marginTop: "3vh" }}
@@ -507,6 +582,8 @@ class StockPage extends React.Component {
                 </Col>
               </Row>
             </Form>
+          </CardBody>
+          <CardBody>
             <Container
               id="map"
               style={{
@@ -519,20 +596,22 @@ class StockPage extends React.Component {
               {this.state.mapLoading && (
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "center",
+                    position: "relative",
+                    top: "250px",
+                    left: "450px",
                     height: 0,
                   }}
                 >
                   <ReactLoading
-                    type={"spokes"}
-                    color={"blue"}
-                    height={25}
-                    width={25}
+                    type={"bars"}
+                    color={"#FEFEE8"}
+                    height={30}
+                    width={40}
                   />
                 </div>
               )}
               <USAMap customize={this.state.stateIndustryResults} />
+              <CategoricalMapLegend />
             </Container>
           </CardBody>
         </Card>

@@ -12,6 +12,7 @@ import "antd/dist/antd.css";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "shards-ui/dist/css/shards.min.css";
+import "./components/style.css";
 
 ReactDOM.render(
   <div>
@@ -19,9 +20,9 @@ ReactDOM.render(
       <Switch>
         <Route exact path="/" render={() => <StatePage />} />
         <Route exact path="/stock" render={() => <StockPage />} />
-        <Route exact path="/yelp" render={() => <YelpPage /> }/>
-        <Route exact path="/covid" render={() => <CovidPage /> }/>
-        <Route exact path="/vote" render={() => <VotingPage /> }/>
+        <Route exact path="/yelp" render={() => <YelpPage />} />
+        <Route exact path="/covid" render={() => <CovidPage />} />
+        <Route exact path="/vote" render={() => <VotingPage />} />
       </Switch>
     </Router>
   </div>,
