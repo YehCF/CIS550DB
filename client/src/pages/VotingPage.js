@@ -21,6 +21,8 @@ import {
     getCompanyPolitical
 } from "../fetcher";
 import * as d3 from "d3";
+import rd3 from "react-d3-library";
+import {Legend} from "chart.js";
 
 /**Set up our drop-down menus*/
 const { Option } = Select;
@@ -36,7 +38,7 @@ const marks = {
 };
 
 /**Create an array of colors that we'll use for the map*/
-const npercentColors = 100;
+const npercentColors = 101;
 const colorScaler = d3
     .scaleLinear()
     .range(["#f7f7f7", "#b40404"])
@@ -48,8 +50,93 @@ for (let i = 0; i < npercentColors; i++) {
 
 /**Maps a percentage onto a color by indexing into the array created above*/
 const percentToColor = (percentage) => {
-    return percentColorArray[Math.floor(Math.max(0, percentage-1))];
+    return percentColorArray[Math.floor(percentage)];
 };
+
+// Categorical Map Legend with D3
+const industryLegend = [
+    "0%",
+    "10%",
+    "20%",
+    "30%",
+    "40%",
+    "50%",
+    "60%",
+    "70%",
+    "80%",
+    "90%",
+    "100%",
+];
+const percentColorReduced = [
+    percentColorArray[0],
+    percentColorArray[10],
+    percentColorArray[20],
+    percentColorArray[30],
+    percentColorArray[40],
+    percentColorArray[50],
+    percentColorArray[60],
+    percentColorArray[70],
+    percentColorArray[80],
+    percentColorArray[90],
+    percentColorArray[100],
+]
+const node = document.createElement("div");
+const svgLegend = d3
+    .select(node)
+    .append("svg")
+    .attr("width", 300)
+    .attr("height", 600)
+    .attr("style", "position: relative; top: -550px; left: 950px;");
+const data = d3.range(11).reduce(function (arr, elem) {
+    return arr.concat(
+        d3.range(11).map(function (d) {
+            return {
+                col: elem,
+            };
+        })
+    );
+}, []);
+svgLegend
+    .selectAll(null)
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("x", 0)
+    .attr("y", (d) => d.col * 50)
+    .attr("width", 30)
+    .attr("height", 30)
+    .attr("fill", function (d) {
+        return percentColorReduced[d.col];
+    });
+svgLegend
+    .selectAll(null)
+    .data(data)
+    .enter()
+    .append("text")
+    .attr("x", 40)
+    .attr("y", (d) => d.col * 50 + 20)
+    .text(function (d) {
+        return industryLegend[d.col];
+    });
+
+const RD3Component = rd3.Component;
+class CategoricalMapLegend extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { d3: "" };
+    }
+
+    componentDidMount() {
+        this.setState({ d3: svgLegend.node() });
+    }
+
+    render() {
+        return <RD3Component data={this.state.d3} />;
+    }
+}
+
+
+
 
 /**The Bar Chart we'll use to look at populous vs. not populous states*/
 const PopulousBarChart = (res) => {
@@ -326,6 +413,7 @@ class VotingPage extends React.Component {
                                 </div>
                             )}
                             <USAMap customize={this.state.resultsPercents}/>
+                            <CategoricalMapLegend />
                         </Container>
                         <div style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
                             <h4>How many {this.state.currentParty.toLowerCase()} candidates did each state send to the Senate between {this.state.minyear} and {this.state.maxyear}?</h4>
