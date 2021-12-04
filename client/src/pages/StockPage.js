@@ -10,7 +10,7 @@ import {
   Container,
 } from "shards-react";
 
-import { Row, Col, DatePicker, Space, Divider, Table } from "antd";
+import { Row, Col, DatePicker, Space, Table } from "antd";
 
 import moment from "moment";
 
@@ -32,8 +32,6 @@ import {
 
 import * as d3 from "d3";
 import rd3 from "react-d3-library";
-
-import colormap from "colormap";
 
 // The setting for DatePicker
 const dateFormat = "YYYY-MM-DD";
@@ -412,7 +410,7 @@ class StockPage extends React.Component {
       <div>
         <MenuBar />
         <Card>
-          <CardBody>
+          <CardBody style={{ backgroundColor: "#f7f7f7" }}>
             <CardTitle>
               <div
                 style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
@@ -493,7 +491,8 @@ class StockPage extends React.Component {
                 </Col>
               </Row>
             </Form>
-            <Divider />
+          </CardBody>
+          <CardBody>
             <Table
               onRow={(record, rowIndex) => {
                 return {
@@ -534,7 +533,7 @@ class StockPage extends React.Component {
           </CardBody>
         </Card>
         <Card>
-          <CardBody>
+          <CardBody style={{ backgroundColor: "#f7f7f7" }}>
             <CardTitle>
               <div
                 style={{ width: "80vw", margin: "auto auto", marginTop: "3vh" }}
@@ -583,6 +582,8 @@ class StockPage extends React.Component {
                 </Col>
               </Row>
             </Form>
+          </CardBody>
+          <CardBody>
             <Container
               id="map"
               style={{

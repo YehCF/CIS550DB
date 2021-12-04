@@ -459,27 +459,27 @@ var yelp_period;
  * Get time range when initialize
  */
 const getTime = () => {
- return new Promise(resolve =>{
-  connection.query(
-    `
+  return new Promise((resolve) => {
+    connection.query(
+      `
     SELECT DATE_FORMAT(MIN(review_date), "%Y-%m-%d") AS start_date, DATE_FORMAT(MAX(review_date), "%Y-%m-%d") AS end_date
     FROM Review;
     `,
-    function (error, results) {
-      if (error) {
-        console.log(error);
-        resolve();
-      } else if (results) {
-        // yelp_start_date = results[0].start_date;
-        // console.log(yelp_start_date);
-        // yelp_last_date = results[0].end_date;
-        // console.log(yelp_last_date);
-        yelp_period = results;
-        resolve();
+      function (error, results) {
+        if (error) {
+          console.log(error);
+          resolve();
+        } else if (results) {
+          // yelp_start_date = results[0].start_date;
+          // console.log(yelp_start_date);
+          // yelp_last_date = results[0].end_date;
+          // console.log(yelp_last_date);
+          yelp_period = results;
+          resolve();
+        }
       }
-    }
-  );
- })
+    );
+  });
 };
 getTime();
 
@@ -584,8 +584,7 @@ Examples:
   http://localhost:8080/yelp/time
 */
 async function yelp_time(req, res) {
-  if(!yelp_period)
-    await getTime();
+  if (!yelp_period) await getTime();
   res.json({ results: yelp_period });
 }
 
@@ -838,7 +837,6 @@ async function elections(req, res) {
   });
 }
 
-
 /**
  * Route 11
  * Get the parties that most consistently get the fewest votes in an election
@@ -916,7 +914,7 @@ async function elections_most_party(req, res) {
 )
 SELECT total_wins.state_abbreviation, S.name AS name, specific_wins AS num_candidates, specific_wins * 100 / total_wins AS percent_vote
 FROM (SELECT * FROM specific_having UNION SELECT * FROM not_having) spec JOIN total_wins ON spec.state_abbreviation = total_wins.state_abbreviation JOIN State S ON total_wins.state_abbreviation = S.abbreviation
-ORDER BY num_candidates DESC`
+ORDER BY num_candidates DESC`;
   //make the query and log the results
   connection.query(query, function (error, results, fields) {
     if (error) {
@@ -1032,7 +1030,7 @@ Examples:
 async function covid_state(req, res) {
   const state = req.query.state;
 
-  if(!state) {
+  if (!state) {
     // defaults to california
     connection.query(
       `SELECT
@@ -1070,7 +1068,6 @@ async function covid_state(req, res) {
       }
     );
   }
-
 }
 
 /*
@@ -1080,9 +1077,9 @@ Examples:
 
 */
 async function covid_season(req, res) {
-    const state = req.query.state;
-    connection.query(
-      `(SELECT SUM(tot_cases) as 'cases', 'Spring' as season, '2021' as year
+  const state = req.query.state;
+  connection.query(
+    `(SELECT SUM(tot_cases) as 'cases', 'Spring' as season, '2021' as year
       FROM Day
       WHERE (submission_date LIKE (submission_date LIKE '2021-03%')
       OR (submission_date LIKE '2021-04%')
@@ -1129,15 +1126,15 @@ async function covid_season(req, res) {
       OR (submission_date LIKE '2020-11%'))
       AND (state = '${state}')
       GROUP BY state)`,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
       }
-    );
+    }
+  );
 }
 
 /*
@@ -1166,7 +1163,6 @@ async function covid_comparison(req, res) {
     }
   );
 }
-  
 
 /*
 Examples:
@@ -1225,7 +1221,7 @@ async function covid_filter(req, res) {
 }
 
 /**
- * Get the daily amount of vaccination given and the number of new cases 
+ * Get the daily amount of vaccination given and the number of new cases
  * Route: /case/stock
  * Route Parameter(s) @param: None
  * Query Parameter(s) @param: start (Date), end (Date), code (string), state (string)
@@ -1236,14 +1232,14 @@ async function covid_filter(req, res) {
  * Expected (Output) Behaviour:
  * - Example: /case/stock?start=2020-05-01&end=2020-12-31&code=AAPL
  */
- async function case_and_vax(req, res) {
+async function case_and_vax(req, res) {
   // check query params
   const state = req.query.state;
   const start = req.query.start;
   const end = req.query.end;
-  
-    connection.query(
-      `WITH NewCase AS (
+
+  connection.query(
+    `WITH NewCase AS (
         SELECT state, submission_date, SUM(new_case) AS new_case
         FROM Day
         WHERE new_case >= 0 AND state = '${state}'
@@ -1253,25 +1249,25 @@ async function covid_filter(req, res) {
       FROM NewCase N JOIN Vaccination V ON  (N.submission_date = V.Date AND V.Location = N.state)
       WHERE N.submission_date BETWEEN '${start}'AND '${end}'
       AND V.Date BETWEEN '${start}'AND '${end}'`,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
       }
-    );
-  }
+    }
+  );
+}
 
-  async function case_and_vax_culm(req, res) {
-    // check query params
-    const state = req.query.state;
-    const start = req.query.start;
-    const end = req.query.end;
-    
-      connection.query(
-        `WITH NewCase AS (
+async function case_and_vax_culm(req, res) {
+  // check query params
+  const state = req.query.state;
+  const start = req.query.start;
+  const end = req.query.end;
+
+  connection.query(
+    `WITH NewCase AS (
           SELECT state, submission_date, SUM(new_case) AS new_case
           FROM Day
           WHERE new_case >= 0 AND state = '${state}'
@@ -1282,36 +1278,46 @@ async function covid_filter(req, res) {
         WHERE N.submission_date BETWEEN '${start}'AND '${end}'
         AND V.Date BETWEEN '${start}'AND '${end}'
         AND date_type = 'Admin'`,
-        function (error, results, fields) {
-          if (error) {
-            console.log(error);
-            res.json({ error: error });
-          } else if (results) {
-            res.json({ results: results });
-          }
-        }
-      );
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
     }
+  );
+}
 
-  async function state_and_vax(req, res) {
-    // check query params
-    const state = req.query.state;
-      connection.query(
-        `SELECT location as state, Administered_Cumulative
-        FROM Vaccination
-        WHERE Date = '2021-12-01'
-        AND date_type = 'Admin'
-        AND Location = '${state}'`,
-        function (error, results, fields) {
-          if (error) {
-            console.log(error);
-            res.json({ error: error });
-          } else if (results) {
-            res.json({ results: results });
-          }
-        }
-      );
+async function state_and_vax(req, res) {
+  // check query params
+  const start = req.query.start;
+  const end = req.query.end;
+  connection.query(
+    `
+    WITH StateVac AS (
+      SELECT Location, SUM(Administered_Daily) as num
+      FROM Vaccination
+      WHERE Date >= '${start}' AND Date <= '${end}' AND date_type = 'Admin'
+      GROUP BY Location
+    ), StateVacRatio AS (
+        SELECT V.Location as state, V.num as num, (V.num / S.population) as ratio
+        FROM StateVac V LEFT JOIN State S
+        ON V.Location = S.abbreviation
+    )
+    SELECT state, num as num_vaccinated, ratio / (SELECT MAX(ratio) from StateVacRatio) as norm_num_vaccinated
+    FROM StateVacRatio
+    `,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
+      }
     }
+  );
+}
 
 module.exports = {
   hello,
@@ -1340,5 +1346,5 @@ module.exports = {
   covid_state,
   case_and_vax,
   state_and_vax,
-  case_and_vax_culm
+  case_and_vax_culm,
 };

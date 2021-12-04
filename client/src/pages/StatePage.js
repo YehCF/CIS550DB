@@ -1,6 +1,6 @@
 import React from "react";
 import { Form, Card, CardBody, CardTitle, FormGroup } from "shards-react";
-import { Divider, Row, Col, DatePicker, Space, Radio } from "antd";
+import { Row, DatePicker, Space, Radio } from "antd";
 import moment from "moment";
 import MenuBar from "../components/MenuBar";
 import {
@@ -8,6 +8,8 @@ import {
   getStateVolatility,
   getStateCaseNorm,
   getYelpMap,
+  getAllStateVax,
+  getPercentVotes,
 } from "../fetcher";
 import USAMap from "react-usa-map";
 import { nColors, colorArray, MapLegend } from "../components/MapLegend";
@@ -20,7 +22,7 @@ const { RangePicker } = DatePicker;
 
 // Radio Setting
 const options = [
-  { label: "Case", value: "Case" },
+  { label: "Vax", value: "Vax" },
   { label: "Vote", value: "Vote" },
   { label: "Stock", value: "Stock" },
   { label: "Yelp", value: "Yelp" },
@@ -31,6 +33,14 @@ const volatilityToColor = (volatility) => {
   const maxVolatilityRatio = 1.2;
   const color_index = Math.round(
     Math.min(volatility, maxVolatilityRatio) * (nColors / maxVolatilityRatio)
+  );
+  return Math.min(color_index, nColors - 1);
+};
+
+const numWinsToColor = (winRatio) => {
+  const maxWinsRatio = 100.0;
+  const color_index = Math.round(
+    Math.min(winRatio, maxWinsRatio) * (nColors / maxWinsRatio)
   );
   return Math.min(color_index, nColors - 1);
 };
@@ -78,27 +88,30 @@ class StatePage extends React.Component {
       stateResults: {},
       allStates: {},
       selectedStateInfo: null,
-      selectedTopic: "Stock",
+      selectedTopic: "Vax",
       // The mapping from the Radio Value to the Attribute in stateResults[state]
       topicToAttribute: {
         Stock: "stockVolatility",
-        Case: "",
-        Vote: "",
+        Vax: "numVaccinatedRatio",
+        Vote: "numWinsRatio",
         Yelp: "numReviews",
       },
+      // The mapping from topic to specific color function
       topicToColorFunc: {
         Stock: volatilityToColor,
-        Case: "",
-        Vote: "",
+        Vax: ncaseRatioToColor,
+        Vote: numWinsToColor,
         Yelp: numReviewsToColor,
       },
+      // The mapping from topic to legend name
       topicToLegend: {
         Stock: "Volatility",
-        Case: "Case",
-        Vote: "Vote",
+        Vax: "Vax",
+        Vote: "Democrat",
         Yelp: "Reviews",
       },
-      legendLabels: { axis1: "Case", axis2: "Stock" },
+      // default to case and stock
+      legendLabels: { axis1: "Case", axis2: "Vax" },
       mapLoading: true,
     };
 
@@ -191,6 +204,10 @@ class StatePage extends React.Component {
 
           // TODO: add other key-values for initialization
           // TODO: case, vote, yelp
+          numVaccinated: 0,
+          numVaccinatedRatio: 0,
+          numWins: 0,
+          numWinsRatio: 0,
           numReviews: 0,
           fill: colorArray[0][0], // default color
         };
@@ -215,7 +232,7 @@ class StatePage extends React.Component {
     this.setState({ mapLoading: false });
   }
 
-  //
+  // this method fetches all the needed info from the DB
   async handleStateResults(event) {
     let startDate = this.state.startDate;
     let endDate = this.state.endDate;
@@ -223,6 +240,21 @@ class StatePage extends React.Component {
       startDate = event[0].format(dateFormat).toString();
       endDate = event[1].format(dateFormat).toString();
     }
+    // get case obj
+    const caseInfo = await getStateCaseNorm(startDate, endDate).then((res) => {
+      // collect new state results
+      const newStateResults = {};
+      // only update the stock related info
+      for (const info of res.results) {
+        if (info["state"]) {
+          newStateResults[info["state"]] = {
+            numConfirmedCases: info["new_case"],
+            numConfirmedCasesRatio: info["norm_ratio"].toFixed(3),
+          };
+        }
+      }
+      return newStateResults;
+    });
     // get stock obj
     const stockInfo = await getStateVolatility(startDate, endDate).then(
       (res) => {
@@ -239,22 +271,6 @@ class StatePage extends React.Component {
         return newStateResults;
       }
     );
-    // get case obj
-    const caseInfo = await getStateCaseNorm(startDate, endDate).then((res) => {
-      // collect new state results
-      const newStateResults = {};
-      // only update the stock related info
-      for (const info of res.results) {
-        if (info["state"]) {
-          newStateResults[info["state"]] = {
-            numConfirmedCases: info["new_case"],
-            numConfirmedCasesRatio: info["norm_ratio"].toFixed(3),
-          };
-        }
-      }
-      return newStateResults;
-    });
-
     // get yelp obj
     const yelpInfo = await getYelpMap(startDate, endDate).then((res) => {
       // collect new state results
@@ -271,7 +287,38 @@ class StatePage extends React.Component {
     });
 
     // get vote obj
-    // get ... obj
+    const voteInfo = await getPercentVotes("1976", "2020", "Democrat").then(
+      (res) => {
+        // collect new state results
+        const newStateResults = {};
+        // only update the stock related info
+        for (const info of res.results) {
+          if (info["state_abbreviation"]) {
+            newStateResults[info["state_abbreviation"]] = {
+              numWins: info["num_candidates"],
+              numWinsRatio: info["percent_vote"],
+            };
+          }
+        }
+        return newStateResults;
+      }
+    );
+    // get vaccination obj
+    const vacInfo = await getAllStateVax(startDate, endDate).then((res) => {
+      // collect new state results
+      const newStateResults = {};
+      // only update the stock related info
+      for (const info of res.results) {
+        if (info["state"]) {
+          newStateResults[info["state"]] = {
+            numVaccinated: info["num_vaccinated"],
+            numVaccinatedRatio: info["norm_num_vaccinated"],
+          };
+        }
+      }
+      return newStateResults;
+    });
+
     // merge
     const mergedStateResults = {};
     for (const [state, fullname] of Object.entries(this.state.allStates)) {
@@ -280,8 +327,11 @@ class StatePage extends React.Component {
         ...stockInfo[state],
         ...caseInfo[state],
         ...yelpInfo[state],
+        ...vacInfo[state],
+        ...voteInfo[state],
       };
     }
+
     this.setState({ stateResults: mergedStateResults });
   }
 
@@ -297,21 +347,27 @@ class StatePage extends React.Component {
     // TO-DO
     window.location = `/vote`;
   }
-  goToCase() {
+  goToCOVID() {
     // TO-DO
-    window.location = `/case`;
+    window.location = `/covid`;
   }
 
   componentDidMount() {
     this.initStateResults();
-    console.log("props: ", this.props);
   }
 
   render() {
     return (
       <div>
         <MenuBar />
-        <Form style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" }}>
+
+        <Form
+          style={{
+            width: "80vw",
+            margin: "0 auto",
+            marginTop: "5vh",
+          }}
+        >
           <Row>
             <FormGroup style={{ width: "25vw", margin: "5 auto" }}>
               <Space direction="vertical" size={1}>
@@ -341,6 +397,7 @@ class StatePage extends React.Component {
             </FormGroup>
           </Row>
         </Form>
+
         <div
           id="map"
           style={{ width: "70vw", margin: "0 auto", marginTop: "5vh" }}
@@ -366,8 +423,8 @@ class StatePage extends React.Component {
           <MapLegend axis={this.state.legendLabels} />
           <div
             style={{
-              width: "30vw",
-              height: 200,
+              width: "40vw",
+              height: 300,
               margin: "auto auto",
               marginTop: "1vh",
             }}
@@ -390,13 +447,24 @@ class StatePage extends React.Component {
                     confirmed cases
                   </Row>
                   <Row style={{ marginTop: "15px" }}>
-                    - Case related sentence{" "}
-                    <a onClick={this.goToCase} class="state-card-goto">
+                    -{" "}
+                    <span class="state-card-info">
+                      {" "}
+                      {this.state.selectedStateInfo["numVaccinated"]}{" "}
+                    </span>{" "}
+                    people have received at least one shot of a vaccine Case
+                    related sentence{" "}
+                    <a onClick={this.goToCOVID} class="state-card-goto">
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>
                   <Row style={{ marginTop: "15px" }}>
-                    - Vote related sentence
+                    - The Democrat wins{" "}
+                    <span class="state-card-info">
+                      {" "}
+                      {this.state.selectedStateInfo["numWinsRatio"]}{" "}
+                    </span>{" "}
+                    % of the elections in 1976 - 2020.
                     <a onClick={this.goToVote} class="state-card-goto">
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>

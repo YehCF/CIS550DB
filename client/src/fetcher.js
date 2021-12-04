@@ -195,6 +195,16 @@ const getCovidSeason = async (state) => {
   return res.json();
 };
 
+const getAllStateVax = async (start, end) => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/covid/vax/state?&start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
 const getNews = async (topic, page, language, sortBy) => {
   //this API have support pagination, but I think showing 10-20 news are enough
   try {
@@ -251,6 +261,7 @@ export {
   getCaseAndVax,
   getCovidSeason,
   getCaseAndVaxCulm,
+  getAllStateVax,
   getNews,
   getPopulousVotes,
   getPartyCounts,
