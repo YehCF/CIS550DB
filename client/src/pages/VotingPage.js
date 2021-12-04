@@ -53,8 +53,8 @@ const percentToColor = (percentage) => {
     return percentColorArray[Math.floor(percentage)];
 };
 
-// Categorical Map Legend with D3
-const industryLegend = [
+/**Categorical Legend for the Voting Map*/
+const percentLegend = [
     "0%",
     "10%",
     "20%",
@@ -116,20 +116,17 @@ svgLegend
     .attr("x", 40)
     .attr("y", (d) => d.col * 50 + 20)
     .text(function (d) {
-        return industryLegend[d.col];
+        return percentLegend[d.col];
     });
-
 const RD3Component = rd3.Component;
 class CategoricalMapLegend extends React.Component {
     constructor(props) {
         super(props);
         this.state = { d3: "" };
     }
-
     componentDidMount() {
         this.setState({ d3: svgLegend.node() });
     }
-
     render() {
         return <RD3Component data={this.state.d3} />;
     }
