@@ -154,9 +154,28 @@ const getCovidData = async (
 };
 
 const getCaseAndVax = async (state, start, end) => {
-  console.log("123123")
   var res = await fetch(
     `http://${config.server_host}:${config.server_port}/covid/vax?state=${state}&start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
+const getCaseAndVaxCulm = async (state, start, end) => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/covid/vax/culm?state=${state}&start=${start}&end=${end}`,
+    {
+      method: "GET",
+    }
+  );
+  return res.json();
+};
+
+const getCovidSeason = async (state) => {
+  var res = await fetch(
+    `http://${config.server_host}:${config.server_port}/covid/season?state=${state}`,
     {
       method: "GET",
     }
@@ -180,5 +199,7 @@ export {
   getYelpTime,
   getYelpFilter,
   getCovidData,
-  getCaseAndVax
+  getCaseAndVax,
+  getCovidSeason,
+  getCaseAndVaxCulm
 };

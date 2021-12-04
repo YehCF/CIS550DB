@@ -1076,86 +1076,60 @@ async function covid_state(req, res) {
 
 /*
 Examples:
-  http://localhost:8080/covid/season/
-  http://localhost:8080/covid/season/fall
-  http://localhost:8080/covid/season/summer
-  http://localhost:8080/covid/gen/spring
+  http://localhost:8080/covid/season?state=CA
+  http://localhost:8080/covid/season?state=NM
+
 */
 async function covid_season(req, res) {
-  const season = req.query.season;
-  // defaults to summer
-  if(season == null || season == "summer") {
+    const state = req.query.state;
     connection.query(
-      `WITH T1 AS (SELECT SUM(tot_cases) as 'SummerCases2020', state
+      `(SELECT SUM(tot_cases) as 'cases', 'Spring' as season, '2021' as year
       FROM Day
-      WHERE submission_date LIKE (submission_date LIKE '2020-06%')
-      OR (submission_date LIKE '2020-07%')
-      OR (submission_date LIKE '2020-08%')
-      GROUP BY state),
-      T2 AS (SELECT SUM(tot_cases) as 'SummerCases2021', state
-      FROM Day
-      WHERE submission_date LIKE (submission_date LIKE '2021-06%')
-      OR (submission_date LIKE '2021-07%')
-      OR (submission_date LIKE '2021-08%')
-      GROUP BY state)
-      ,T3 AS (SELECT name, abbreviation FROM State)
-      SELECT T3.name, SummerCases2020, SummerCases2021
-      FROM (T1 JOIN T2 ON T1.state = T2.state JOIN T3 on T3.abbreviation = T2.state)
-      ORDER BY SummerCases2020 DESC`,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
-      }
-    );
-  } else if(season == "spring") {
-    connection.query(
-      `WITH T1 AS (SELECT SUM(tot_cases) as 'SpringCases2020', state
-      FROM Day
-      WHERE submission_date LIKE (submission_date LIKE '2020-03%')
-      OR (submission_date LIKE '2020-04%')
-      OR (submission_date LIKE '2020-05%')
-      GROUP BY state),
-      T2 AS (SELECT SUM(tot_cases) as 'SpringCases2021', state
-      FROM Day
-      WHERE submission_date LIKE (submission_date LIKE '2021-03%')
+      WHERE (submission_date LIKE (submission_date LIKE '2021-03%')
       OR (submission_date LIKE '2021-04%')
-      OR (submission_date LIKE '2021-05%')
+      OR (submission_date LIKE '2021-05%'))
+      AND (state = '${state}')
       GROUP BY state)
-      ,T3 AS (SELECT name, abbreviation FROM State)
-      SELECT T3.name, SpringCases2020, SpringCases2021
-      FROM (T1 JOIN T2 ON T1.state = T2.state JOIN T3 on T3.abbreviation = T2.state)
-      ORDER BY SpringCases2020 DESC`,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
-      }
-    );
-  } else if(season == "fall") {
-    connection.query(
-      `WITH T1 AS (SELECT SUM(tot_cases) as 'FallCases2020', state
+      UNION
+      (SELECT SUM(tot_cases) as 'cases', 'Spring' as season, '2020' as year
       FROM Day
-      WHERE submission_date LIKE (submission_date LIKE '2020-09%')
-      OR (submission_date LIKE '2020-10%')
-      OR (submission_date LIKE '2020-11%')
-      GROUP BY state),
-      T2 AS (SELECT SUM(tot_cases) as 'FallCases2021', state
+      WHERE (submission_date LIKE (submission_date LIKE '2021-03%')
+      OR (submission_date LIKE '2020-04%')
+      OR (submission_date LIKE '2020-05%'))
+      AND (state = '${state}')
+      GROUP BY state)
+      UNION
+      (SELECT SUM(tot_cases) as 'cases', 'Summer' as season, '2020' as year
       FROM Day
-      WHERE submission_date LIKE (submission_date LIKE '2021-09%')
+      WHERE (submission_date LIKE (submission_date LIKE '2020-06%')
+      OR (submission_date LIKE '2020-07%')
+      OR (submission_date LIKE '2020-08%'))
+      AND (state = '${state}')
+      GROUP BY state)
+      UNION
+      (SELECT SUM(tot_cases) as 'cases','Summer' as season, '2021' as year
+      FROM Day
+      WHERE (submission_date LIKE (submission_date LIKE '2021-06%')
+      OR (submission_date LIKE '2021-07%')
+      OR (submission_date LIKE '2021-08%'))
+      AND (state = '${state}')
+      GROUP BY state)
+      UNION
+     (SELECT SUM(tot_cases) as 'cases', 'Fall' as season, '2021' as year
+      FROM Day
+      WHERE (submission_date LIKE (submission_date LIKE '2021-09%')
       OR (submission_date LIKE '2021-10%')
-      OR (submission_date LIKE '2021-11%')
+      OR (submission_date LIKE '2021-11%'))
+      AND (state = '${state}')
       GROUP BY state)
-      ,T3 AS (SELECT name, abbreviation FROM State)
-      SELECT T3.name, FallCases2020, FallCases2021
-      FROM (T1 JOIN T2 ON T1.state = T2.state JOIN T3 on T3.abbreviation = T2.state)
-      ORDER BY FallCases2020 DESC`,
+      UNION
+      (SELECT SUM(tot_cases) as 'cases', 'Fall' as season, '2020' as year
+      FROM Day
+      WHERE (submission_date LIKE (submission_date LIKE '2021-09%')
+      OR (submission_date LIKE '2020-10%')
+      OR (submission_date LIKE '2020-11%'))
+      AND (state = '${state}')
+      GROUP BY state)`,
       function (error, results, fields) {
         if (error) {
           console.log(error);
@@ -1165,8 +1139,6 @@ async function covid_season(req, res) {
         }
       }
     );
-  }
- 
 }
 
 /*
@@ -1293,10 +1265,54 @@ async function covid_filter(req, res) {
     );
   }
 
+  async function case_and_vax_culm(req, res) {
+    // check query params
+    const state = req.query.state;
+    const start = req.query.start;
+    const end = req.query.end;
+    
+      connection.query(
+        `WITH NewCase AS (
+          SELECT state, submission_date, SUM(new_case) AS new_case
+          FROM Day
+          WHERE new_case >= 0 AND state = '${state}'
+          GROUP BY submission_date
+        )
+        SELECT N.state,  DATE_FORMAT(N.submission_date, "%m-%d-%Y") AS date, V.Administered_Cumulative AS vaxs, N.new_case AS new_case
+        FROM NewCase N JOIN Vaccination V ON  (N.submission_date = V.Date AND V.Location = N.state)
+        WHERE N.submission_date BETWEEN '${start}'AND '${end}'
+        AND V.Date BETWEEN '${start}'AND '${end}'
+        AND date_type = 'Admin'`,
+        function (error, results, fields) {
+          if (error) {
+            console.log(error);
+            res.json({ error: error });
+          } else if (results) {
+            res.json({ results: results });
+          }
+        }
+      );
+    }
 
-
-
-
+  async function state_and_vax(req, res) {
+    // check query params
+    const state = req.query.state;
+      connection.query(
+        `SELECT location as state, Administered_Cumulative
+        FROM Vaccination
+        WHERE Date = '2021-12-01'
+        AND date_type = 'Admin'
+        AND Location = '${state}'`,
+        function (error, results, fields) {
+          if (error) {
+            console.log(error);
+            res.json({ error: error });
+          } else if (results) {
+            res.json({ results: results });
+          }
+        }
+      );
+    }
 
 module.exports = {
   hello,
@@ -1323,5 +1339,7 @@ module.exports = {
   covid_filter,
   covid_season,
   covid_state,
-  case_and_vax
+  case_and_vax,
+  state_and_vax,
+  case_and_vax_culm
 };

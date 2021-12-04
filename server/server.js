@@ -71,8 +71,16 @@ app.get("/covid/comparison", routes.covid_comparison);
 // takes in a timeframe, and an optional state list, produces covid stats 
 app.get("/covid/filter", routes.covid_filter);
 
-// takes in a timeframe, and an optional state list, produces covid stats 
+// takes in a timeframe, and a state list, produces data of daily vaccaintionss and cases
 app.get("/covid/vax", routes.case_and_vax);
+
+// takes in a timeframe, and a state list, produces data of Cumulative vaccaintionss and cases
+app.get("/covid/vax/culm", routes.case_and_vax_culm);
+
+// takes in a state, and outputs the cumulative amount of people vaccainted (as of 2021-12-01) 
+app.get("/covid/vax/state", routes.state_and_vax);
+
+
 
 app.listen(config.server_port, () => {
   console.log(

@@ -19,12 +19,10 @@ import { DualAxes, Column } from "@ant-design/charts";
 
 import MenuBar from "../components/MenuBar";
 import {
-  getAllIndustries,
-  getAllStates,
-  getStateIndustry,
-  getStateVolatility,
   getCovidData,
   getCaseAndVax,
+  getCovidSeason,
+  getCaseAndVaxCulm
 } from "../fetcher";
 
 import * as d3 from "d3";
@@ -43,7 +41,6 @@ let industryColorArray = [];
 for (let i = 0; i < nIndustryColors; i++) {
   industryColorArray[i] = colorScaler(i);
 }
-console.log(industryColorArray);
 
 const stateColumns = [
   {
@@ -91,8 +88,7 @@ const stateColumns = [
 ];
 
 const CovidDualAxes = (data) => {
-  console.log(data.data);
-  var config = {
+    var config = {
     data: [data.data, data.data],
     xField: "date",
     yField: ["vaxs", "new_case"],
@@ -151,22 +147,24 @@ const DemoColumn = (res) => {
    */
   const config = {
     data,
-    xField: "state",
-    yField: "volatility",
-    // label is to show the y value in each bar
+    isGroup: true,
+    xField: 'season',
+    yField: 'cases',
+    seriesField: 'year',
+
     label: {
-      position: "top",
-      // 'top', 'bottom', 'middle',
-      style: {
-        fill: "black",
-        opacity: 0.6,
-      },
-    },
-    xAxis: {
-      label: {
-        autoHide: true,
-        autoRotate: false,
-      },
+      position: 'middle',
+      layout: [
+        {
+          type: 'interval-adjust-position',
+        }, 
+        {
+          type: 'interval-hide-overlap',
+        }, 
+        {
+          type: 'adjust-color',
+        },
+      ],
     },
     meta: {
       state: {
@@ -194,6 +192,8 @@ class CovidPage extends React.Component {
       covidTableResults: [],
       selectedCovidInfo: null, // use this for graph
       selectedCOVID_VAX: [], // use this for graph
+      selectedCOVID_VAX2: [], // use this for graph
+
       tableLoading: true,
       allIndustries: [],
       industryToColor: {},
@@ -208,12 +208,13 @@ class CovidPage extends React.Component {
     this.handleStateChange = this.handleStateChange.bind(this);
     this.handleCalendarChange = this.handleCalendarChange.bind(this);
     this.updateSearchResults = this.updateSearchResults.bind(this);
-    this.updateSelectedStock = this.updateSelectedStock.bind(this);
-    this.updateDemoResults = this.updateDemoResults.bind(this);
+    this.updateSelectedCOVID = this.updateSelectedCOVID.bind(this);
+    this.updateSelectedCOVID2 = this.updateSelectedCOVID2.bind(this);
+
+    this.updateSeasonResults = this.updateSeasonResults.bind(this);
   }
 
   handleCodeChange(event) {
-    console.log(event.target.value);
     this.setState({ code: event.target.value });
   }
 
@@ -237,41 +238,46 @@ class CovidPage extends React.Component {
       this.state.endDate,
       this.state.code
     ).then((res) => {
-      console.log(res.results);
       this.setState({ covidTableResults: res.results });
       this.setState({ tableLoading: false });
     });
   }
 
   // for demo purpose
-  updateDemoResults() {
-    getStateVolatility(this.state.startDate, this.state.endDate).then((res) => {
-      console.log("Wwd: ", res.results);
+  updateSeasonResults(rowRecord) {
+    getCovidSeason(rowRecord["state"]).then((res) => {
       this.setState({ demoData: res.results });
     });
   }
 
-  updateSelectedStock(rowRecord) {
+  updateSelectedCOVID(rowRecord) {
     getCaseAndVax(
       rowRecord["state"],
       this.state.startDate,
       this.state.endDate
     ).then((res) => {
-      console.log(rowRecord);
-
       this.setState({ selectedCovidInfo: rowRecord });
       this.setState({ selectedCOVID_VAX: res.results });
+    });
+  }
+
+  updateSelectedCOVID2(rowRecord) {
+    getCaseAndVaxCulm(
+      rowRecord["state"],
+      this.state.startDate,
+      this.state.endDate
+    ).then((res) => {
+      this.setState({ selectedCovidInfo: rowRecord });
+      this.setState({ selectedCOVID_VAX2: res.results });
     });
   }
 
   componentDidMount() {
     this.setState({ tableLoading: true });
     getCovidData(default_period[0], default_period[1]).then((res) => {
-      console.log(res.results);
       this.setState({ covidTableResults: res.results });
       this.setState({ tableLoading: false });
     });
-    this.updateDemoResults();
   }
 
   render() {
@@ -338,7 +344,9 @@ class CovidPage extends React.Component {
               onRow={(record, rowIndex) => {
                 return {
                   onClick: (event) => {
-                    this.updateSelectedStock(record);
+                    this.updateSelectedCOVID(record);
+                    this.updateSelectedCOVID2(record);
+                    this.updateSeasonResults(record);
                   },
                 };
               }}
@@ -361,15 +369,23 @@ class CovidPage extends React.Component {
                   }}
                 >
                   <h4>
-                    New Cases & Daily Vaccine Administrations:{" "}
-                    {this.state.selectedCovidInfo["state"]}
+                  Data for: <span style={{ color: "blue" }}> {this.state.selectedCovidInfo["state"]} </span>
                   </h4>
+                  <h5> New Cases & Daily Vaccine Administrations:{" "} </h5>
                   <CovidDualAxes data={this.state.selectedCOVID_VAX} />
+                  <br/>
+                  <h5> New Cases & Cumulative Vaccine Administrations:{" "} </h5>
+                  <CovidDualAxes data={this.state.selectedCOVID_VAX2} />
+                  <h5>
+                    <br/>
+                     New Cases & The Seasons {" "}
+                     <DemoColumn data={this.state.demoData} />
+                  </h5>
                 </div>
               </div>
             )}
             <div>
-              <DemoColumn data={this.state.demoData} />
+
             </div>
             {/* <div>
           <Divider />
