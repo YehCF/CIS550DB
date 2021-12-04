@@ -1,0 +1,20 @@
+div.react-component {
+  width: 0;
+  height: 0;
+}
+
+path:hover {
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.state-card-info {
+  color: darkblue;
+  font-weight: bold;
+  margin: auto 1%;
+}
+
+.state-card-goto {
+  margin: auto 1%;
+  color: lightseagreen;
+}
