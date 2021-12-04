@@ -1,3 +1,5 @@
 server/.idea/
 voting_preprocessing/.Rhistory
 server/node_modules/
+.idea/
+client/node_modules/

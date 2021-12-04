@@ -198,6 +198,28 @@ const getNews = async (topic, page, language, sortBy) => {
   }
 };
 
+const getPartyCounts = async(yearmin, yearmax) => {
+  var res = await fetch(
+      `http://${config.server_host}:${config.server_port}/elections?minyear=${yearmin}&maxyear=${yearmax}`,
+      {method: "GET"}
+  );
+  return res.json();
+};
+
+const getPopulousVotes = async(yearmin, yearmax, limit) => {
+  var res = await fetch(
+      `http://${config.server_host}:${config.server_port}/elections/populous/?minyear=${yearmin}&maxyear=${yearmax}&limit=${limit}`
+  );
+  return res.json();
+}
+
+const getPercentVotes = async(yearmin, yearmax, party) => {
+  var res = await fetch(
+      `http://${config.server_host}:${config.server_port}/elections/party/?minyear=${yearmin}&maxyear=${yearmax}&party=${party}`
+  )
+  return res.json();
+}
+
 export {
   getCaseAndStock,
   getAllStocks,
@@ -216,5 +238,8 @@ export {
   getCaseAndVax,
   getCovidSeason,
   getCaseAndVaxCulm,
-  getNews
+  getNews,
+  getPopulousVotes,
+  getPartyCounts,
+  getPercentVotes
 };

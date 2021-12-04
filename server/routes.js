@@ -838,6 +838,7 @@ async function elections(req, res) {
   });
 }
 
+
 /**
  * Route 11
  * Get the parties that most consistently get the fewest votes in an election
@@ -893,30 +894,29 @@ async function elections_fewest(req, res) {
  * @param party the party that we want to consider (default = Democrat)
  * */
 async function elections_most_party(req, res) {
-  //get the parameters from the user
   const minyear = req.query.minyear ? req.query.minyear : 1976;
   const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
-  const party = req.query.party ? req.query.party : "DEMOCRAT";
-  //define the query
-  query = `
-    WITH Temp AS(
-        SELECT state_abbreviation, COUNT(*) AS num_candidates 
-        FROM Elections 
-        WHERE won=1 AND year >= ${minyear} AND year <= ${maxyear} AND stage = "gen" and party_detailed = "${party}"
-        GROUP BY state_abbreviation
-        UNION
-        SELECT DISTINCT state_abbreviation, 0 AS num_candidates 
-        FROM Elections E1 
-        WHERE NOT EXISTS(
-            SELECT * FROM Elections E2
-            WHERE E1.state_abbreviation = E2.state_abbreviation 
-            AND E2.year >= ${minyear} AND E2.year <= ${maxyear} AND E2.won = 1 AND E2.stage = "gen" and E2.party_detailed = "${party}" 
+  const party = req.query.party;
+  query = `WITH total_wins AS (
+    SELECT state_abbreviation, COUNT(*) AS total_wins
+    FROM Elections
+    WHERE year >= ${minyear} AND year <= ${maxyear} AND won = 1
+    GROUP BY state_abbreviation
+), specific_having AS (
+    SELECT state_abbreviation, COUNT(*) AS specific_wins
+    FROM Elections
+    WHERE year >= ${minyear} AND year <= ${maxyear} and won = 1 AND party_detailed LIKE "%${party}%"
+    GROUP BY  state_abbreviation
+), not_having AS (
+    SELECT DISTINCT state_abbreviation, 0 AS specific_wins
+    FROM Elections
+    WHERE state_abbreviation NOT IN(
+        SELECT state_abbreviation FROM specific_having
         )
-    )
-    SELECT S.abbreviation, S.name, T.num_candidates
-    FROM Temp T JOIN State S ON T.state_abbreviation = S.abbreviation
-    ORDER BY num_candidates DESC;
-`;
+)
+SELECT total_wins.state_abbreviation, S.name AS name, specific_wins AS num_candidates, specific_wins * 100 / total_wins AS percent_vote
+FROM (SELECT * FROM specific_having UNION SELECT * FROM not_having) spec JOIN total_wins ON spec.state_abbreviation = total_wins.state_abbreviation JOIN State S ON total_wins.state_abbreviation = S.abbreviation
+ORDER BY num_candidates DESC`
   //make the query and log the results
   connection.query(query, function (error, results, fields) {
     if (error) {
