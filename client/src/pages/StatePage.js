@@ -72,7 +72,6 @@ class StatePage extends React.Component {
    */
   constructor(props) {
     super(props);
-    console.log(props);
     this.state = {
       startDate: "2020-03-01",
       endDate: "2020-12-31",
@@ -103,14 +102,12 @@ class StatePage extends React.Component {
       mapLoading: true,
     };
 
-    this.handleStateStock = this.handleStateStock.bind(this);
-    this.handleStateCases = this.handleStateCases.bind(this);
     this.handleCalendarChange = this.handleCalendarChange.bind(this);
     this.handleRadioChange = this.handleRadioChange.bind(this);
   }
 
   // UI
-  handleCalendarChange(event) {
+  async handleCalendarChange(event) {
     if (event[0] && event[1]) {
       this.setState({ mapLoading: true });
       this.setState({
@@ -119,12 +116,10 @@ class StatePage extends React.Component {
       });
       // update data
       // case
-      this.handleStateCases(event);
-      // vote
-      // stock
-      this.handleStateStock(event);
-      // yelp
-      this.handleStateYelp(event);
+      await this.handleStateResults(event);
+      // plot
+      this.updateStateMapColor();
+      this.setState({ mapLoading: false });
     }
   }
 
@@ -175,10 +170,10 @@ class StatePage extends React.Component {
     }
   }
 
-  initStateResults() {
+  async initStateResults() {
     // set state abbreviations
     this.setState({ mapLoading: true });
-    getAllStates()
+    await getAllStates()
       .then((res) => {
         const states = {};
         for (const obj of res.results) {
@@ -193,10 +188,11 @@ class StatePage extends React.Component {
           stockVolatility: 0,
           numConfirmedCases: 0,
           numConfirmedCasesRatio: 0,
-          fill: colorArray[0][0], // default color
+
           // TODO: add other key-values for initialization
           // TODO: case, vote, yelp
           numReviews: 0,
+          fill: colorArray[0][0], // default color
         };
         // initialize with clickHandler for each state
         for (const [state, fullname] of Object.entries(this.state.allStates)) {
@@ -214,102 +210,79 @@ class StatePage extends React.Component {
           };
         }
       });
-
-    this.handleStateStock();
-    this.handleStateCases();
-    this.handleStateYelp();
+    await this.handleStateResults();
+    this.updateStateMapColor();
+    this.setState({ mapLoading: false });
   }
 
-  handleStateStock(event) {
-    // event: null or the input from calendar
+  //
+  async handleStateResults(event) {
     let startDate = this.state.startDate;
     let endDate = this.state.endDate;
     if (event && event[0] && event[1]) {
       startDate = event[0].format(dateFormat).toString();
       endDate = event[1].format(dateFormat).toString();
     }
-    getStateVolatility(startDate, endDate).then((res) => {
-      // collect new state results
-      const newStateResults = {};
-      // only update the stock related info
-      for (const info of res.results) {
-        if (info["state"]) {
-          newStateResults[info["state"]] = {
-            ...this.state.stateResults[info["state"]],
-            stockVolatility: info["volatility"].toFixed(3),
-          };
+    // get stock obj
+    const stockInfo = await getStateVolatility(startDate, endDate).then(
+      (res) => {
+        // collect new state results
+        const newStateResults = {};
+        // only update the stock related info
+        for (const info of res.results) {
+          if (info["state"]) {
+            newStateResults[info["state"]] = {
+              stockVolatility: info["volatility"].toFixed(3),
+            };
+          }
         }
+        return newStateResults;
       }
-      // set state to update the map for new stock info
-      this.setState({
-        stateResults: { ...this.state.stateResults, ...newStateResults },
-      });
-      // update the color based on the Radio
-      this.updateStateMapColor();
-    });
-  }
-
-  handleStateCases(event) {
-    let startDate = this.state.startDate;
-    let endDate = this.state.endDate;
-    if (event && event[0] && event[1]) {
-      startDate = event[0].format(dateFormat).toString();
-      endDate = event[1].format(dateFormat).toString();
-    }
-    getStateCaseNorm(startDate, endDate).then((res) => {
+    );
+    // get case obj
+    const caseInfo = await getStateCaseNorm(startDate, endDate).then((res) => {
       // collect new state results
       const newStateResults = {};
       // only update the stock related info
       for (const info of res.results) {
         if (info["state"]) {
           newStateResults[info["state"]] = {
-            ...this.state.stateResults[info["state"]],
             numConfirmedCases: info["new_case"],
             numConfirmedCasesRatio: info["norm_ratio"].toFixed(3),
           };
         }
       }
-      // set state to update the map for new stock info
-      this.setState({
-        stateResults: { ...this.state.stateResults, ...newStateResults },
-      });
-      // update the color based on the Radio
-      this.updateStateMapColor();
+      return newStateResults;
     });
-  }
 
-  // fetch state vote
-  handleStateVote() {}
-
-  // fetch state yelp
-  handleStateYelp(event) {
-    let startDate = this.state.startDate;
-    let endDate = this.state.endDate;
-    if (event && event[0] && event[1]) {
-      startDate = event[0].format(dateFormat).toString();
-      endDate = event[1].format(dateFormat).toString();
-    }
-    getYelpMap(startDate, endDate).then((res) => {
-      console.log(res.results);
+    // get yelp obj
+    const yelpInfo = await getYelpMap(startDate, endDate).then((res) => {
       // collect new state results
       const newStateResults = {};
       // only update the stock related info
       for (const info of res.results) {
         if (info["state"]) {
           newStateResults[info["state"]] = {
-            ...this.state.stateResults[info["state"]],
             numReviews: info["review_count"],
           };
         }
       }
-      // set state to update the map for new stock info
-      this.setState({
-        stateResults: { ...this.state.stateResults, ...newStateResults },
-      });
-      // update the color based on the Radio
-      this.setState({ mapLoading: false });
-      this.updateStateMapColor();
+      return newStateResults;
     });
+
+    // get vote obj
+    // get ... obj
+    // merge
+    const mergedStateResults = {};
+    for (const [state, fullname] of Object.entries(this.state.allStates)) {
+      mergedStateResults[state] = {
+        ...this.state.stateResults[state],
+        ...stockInfo[state],
+        ...caseInfo[state],
+        ...yelpInfo[state],
+      };
+    }
+    this.setState({ stateResults: mergedStateResults });
   }
 
   goToStock() {
@@ -331,6 +304,7 @@ class StatePage extends React.Component {
 
   componentDidMount() {
     this.initStateResults();
+    console.log("props: ", this.props);
   }
 
   render() {

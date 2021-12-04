@@ -106,7 +106,6 @@ class MapLegend extends React.Component {
       .attr("x", 35)
       .attr("y", 12)
       .attr("transform", "translate(120 12) rotate(180)")
-      // .attr("transform", "")
       .text(function () {
         return axis1;
       });
