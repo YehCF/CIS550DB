@@ -43,12 +43,10 @@ app.get("/yelp/filter", routes.yelp_filter);
 /*Election Routes*/
 // Route 10
 app.get("/elections", routes.elections);
-//Newer implementation of Route 10
-app.get("/elections/percent", routes.elections_percent);
 // Route 11
 app.get("/elections/fewest", routes.elections_fewest);
 // Route 12
-app.get("/elections/most_of_party", routes.elections_most_party);
+app.get("/elections/party", routes.elections_most_party);
 // Route 13
 app.get("/elections/populous", routes.elections_populous);
 
