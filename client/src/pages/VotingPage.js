@@ -9,7 +9,7 @@ import {
     CardTitle,
     Container,
 } from "shards-react";
-import { DualAxes, Column } from "@ant-design/charts";
+import { DualAxes, Column, Line} from "@ant-design/charts";
 import { Row, Col, DatePicker, Space, Divider, Table, Slider, Select} from "antd";
 import moment from "moment";
 import ReactLoading from "react-loading";
@@ -18,7 +18,8 @@ import MenuBar from "../components/MenuBar";
 import {
     getPopulousVotes,
     getPercentVotes,
-    getLeastMostVotes
+    getLeastMostVotes,
+    getCompanyPolitical
 } from "../fetcher";
 
 import * as d3 from "d3";
@@ -39,7 +40,18 @@ const percentToColor = (volatility) => {
     return industryColorArray[Math.floor(Math.max(0, volatility-1))];
 };
 
+const DemoColumn2 = (res) => {
+    const data = res.data.sort((a,b)=> a.year - b.year);
+    const config = {
+        data,
+        isGroup: true,
+        xField: "year",
+        yField: "num_companies",
+        seriesField: "party_detailed",
 
+    }
+    return <Line {...config} />;
+}
 
 
 
@@ -141,6 +153,7 @@ class VotingPage extends React.Component {
             resultsRankedCandidates: [],
             resultsMostLeastVotes: [],
             currentState: "ALL",
+            resultsCompanies: [],
             //not yet used
             tableLoading: false,
         }
@@ -152,6 +165,7 @@ class VotingPage extends React.Component {
         this.updatePercentResults = this.updatePercentResults.bind(this);
         this.updateMostLeastResults = this.updateMostLeastResults.bind(this);
         this.updateMostLeastResults = this.updateMostLeastResults.bind(this);
+        this.updateCompanyResults = this.updateCompanyResults.bind(this);
 
    }
 
@@ -164,6 +178,7 @@ class VotingPage extends React.Component {
                 this.updatePopulousResults();
                 this.updatePercentResults();
                 this.updateMostLeastResults();
+                this.updateCompanyResults();
             });
 
         }
@@ -190,6 +205,12 @@ class VotingPage extends React.Component {
                 i += 2;
             }
             this.setState({resultsPopulous: res.results, resultsPopGraph: newGraphRes});
+        })
+    }
+
+    updateCompanyResults(event){
+        getCompanyPolitical(this.state.minyear, this.state.maxyear).then((res)=>{
+            this.setState({resultsCompanies: res.results});
         })
     }
 
@@ -232,6 +253,7 @@ class VotingPage extends React.Component {
         this.updatePopulousResults();
         this.updatePercentResults();
         this.updateMostLeastResults();
+        this.updateCompanyResults();
     }
 
     render() {
@@ -417,6 +439,21 @@ class VotingPage extends React.Component {
                             }}
                             style={{ width: "80vw", margin: "0 auto", marginTop: "2vh" }}
                         />
+                    </CardBody>
+                </Card>
+                <Card>
+                    <CardBody>
+                        <CardTitle>
+                            <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh", marginBottom: "3vh"}}>
+                                <h3> 💸 Do Companies Prefer Red or Blue States? </h3>
+                            </div>
+                        </CardTitle>
+                        <div style={{ width: "80vw", margin: "auto auto", marginTop: "3vh", marginBottom: "3vh"}}>
+                            <p> This graph shows the number of companies that have chosen to locate in states of each party between {this.state.minyear} and {this.state.maxyear}. </p>
+                        </div>
+                        <div style={{ width: "80vw", margin: "0 auto", marginTop: "5vh" , marginBottom: "5vh"}}>
+                            <DemoColumn2 data={this.state.resultsCompanies} />
+                        </div>
                     </CardBody>
                 </Card>
             </div>

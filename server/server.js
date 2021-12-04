@@ -49,10 +49,8 @@ app.get("/elections/fewest", routes.elections_fewest);
 app.get("/elections/party", routes.elections_most_party);
 // Route 13
 app.get("/elections/populous", routes.elections_populous);
-
-/*Combination Routes*/
 // Route 14
-app.get("/stock/political", routes.company_political);
+app.get("/elections/companies", routes.company_political);
 
 /*COVID Routes*/ 
 

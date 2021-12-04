@@ -990,15 +990,17 @@ async function elections_populous(req, res) {
 
 /**Route 14
  * Are more companies in blue or red states in a given year?
- * @param : year in which to conduct the calculation*/
+ * @param minyear the low end of the range of years to consider (default = beginning of data)
+ * @param maxyear the high end of the range of years to consider (default = 2020)*/
 async function company_political(req, res) {
   //get the user parameters
-  const year = req.query.year ? req.query.year : 2020;
+  const minyear = req.query.minyear ? req.query.minyear : 1976;
+  const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
   // write the query
-  query = `SELECT E.party_detailed, COUNT(DISTINCT C.name) AS num_companies
-        FROM Company C JOIN Elections E on C.state = E.state_abbreviation
-        WHERE E.won = 1 AND E.year = ${year}
-        GROUP BY E.party_detailed `;
+  query = `SELECT E.party_detailed, COUNT(DISTINCT C.name) AS num_companies, E.year AS year
+    FROM Company C JOIN Elections E on C.state = E.state_abbreviation
+    WHERE E.won = 1 and E. year >= ${minyear} AND E.year <= ${maxyear}
+    GROUP BY E.party_detailed, E.year`;
   //execute the query and return the results
   connection.query(query, function (error, results, fields) {
     if (error) {
