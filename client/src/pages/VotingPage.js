@@ -145,7 +145,7 @@ const PopulousBarChart = (res) => {
         isGroup: true,
         xField: "party_detailed",
         yField: "count",
-        seriesField: "count_type",
+        seriesField: "type",
         // label is to show the y value in each bar
         label: {
             position: "top",
@@ -323,15 +323,7 @@ class VotingPage extends React.Component {
     /**Update the results of elections in the most vs. least populous states*/
     updatePopulousResults(event){
         getPopulousVotes(this.state.minyear, this.state.maxyear, this.state.limitPopulous).then((res)=>{
-            // we need to re-format the data for the bar graph by splitting up the most and least populous objects and adding k to the labels
-            var newGraphRes = []
-            var i = 0;
-            for (const obj of res.results){
-                newGraphRes[i] = {party_detailed: obj.party_detailed, count_type: `${this.state.limitPopulous} Least Populous States`, count: obj.least_populous_count}
-                newGraphRes[i + 1] = {party_detailed: obj.party_detailed, count_type: `${this.state.limitPopulous} Most Populous States`, count: obj.most_populous_count}
-                i += 2;
-            }
-            this.setState({resultsPopulous: newGraphRes});
+            this.setState({resultsPopulous: res.results});
         })
     }
 
