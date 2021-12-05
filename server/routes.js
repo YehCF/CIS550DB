@@ -912,24 +912,18 @@ async function elections_most_party(req, res) {
   const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
   const party = req.query.party;
   query = `WITH total_wins AS (
-    SELECT state_abbreviation, COUNT(*) AS total_wins
-    FROM Elections
-    WHERE year >= ${minyear} AND year <= ${maxyear} AND won = 1
+    SELECT state_abbreviation, name, COUNT(*) AS total_wins
+    FROM won_general_elections
+    WHERE year >= ${minyear} AND year <= ${maxyear}
     GROUP BY state_abbreviation
 ), specific_having AS (
-    SELECT state_abbreviation, COUNT(*) AS specific_wins
-    FROM Elections
-    WHERE year >= ${minyear} AND year <= ${maxyear} and won = 1 AND party_detailed LIKE "%${party}%"
-    GROUP BY  state_abbreviation
-), not_having AS (
-    SELECT DISTINCT state_abbreviation, 0 AS specific_wins
-    FROM Elections
-    WHERE state_abbreviation NOT IN(
-        SELECT state_abbreviation FROM specific_having
-        )
+    SELECT state_abbreviation, name, COUNT(*) AS specific_wins
+    FROM won_general_elections
+    WHERE year >= ${minyear} AND year <= ${maxyear}  AND party_detailed = "${party}"
+    GROUP BY  state_abbreviation, name
 )
-SELECT total_wins.state_abbreviation, S.name AS name, specific_wins AS num_candidates, specific_wins * 100 / total_wins AS percent_vote
-FROM (SELECT * FROM specific_having UNION SELECT * FROM not_having) spec JOIN total_wins ON spec.state_abbreviation = total_wins.state_abbreviation JOIN State S ON total_wins.state_abbreviation = S.abbreviation
+SELECT T.state_abbreviation, T.name, IFNULL(specific_wins, 0) AS num_candidates, IFNULL(specific_wins, 0) * 100 / total_wins AS percent_vote
+FROM total_wins T LEFT OUTER JOIN specific_having S ON T.state_abbreviation = S.state_abbreviation
 ORDER BY num_candidates DESC`;
   //make the query and log the results
   connection.query(query, function (error, results, fields) {
