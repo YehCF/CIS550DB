@@ -949,29 +949,28 @@ async function elections_populous(req, res) {
   const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
   const limit = req.query.limit ? req.query.limit : 5;
   // write out the query
-  query = ` WITH most_populous_states AS (
-        SELECT abbreviation 
-        FROM State 
-        ORDER BY population DESC 
+  query =
+      `WITH most_populous_states AS (
+        SELECT abbreviation
+        FROM State
+        ORDER BY population DESC
         LIMIT ${limit}
     ),
     least_populous_states AS (
         SELECT abbreviation
-        FROM State 
+        FROM State
         ORDER BY population
         LIMIT ${limit}
     )
-    SELECT M.party_detailed, most_populous_count, least_populous_count 
-    FROM (SELECT party_detailed, COUNT(*) AS most_populous_count
-        FROM most_populous_states M JOIN Elections E on M.abbreviation = E.state_abbreviation
-        WHERE E.won = 1 AND E.year >= ${minyear} and E.year <= ${maxyear}
-        GROUP BY party_detailed) M
-        LEFT OUTER JOIN (
-        SELECT party_detailed, COUNT(*) AS least_populous_count 
-        FROM least_populous_states M JOIN Elections E on M.abbreviation = E.state_abbreviation
-        WHERE E.won = 1 AND E.year <= ${maxyear} AND E.year >= ${minyear}
-        GROUP BY party_detailed) L
-        ON M.party_detailed = L.party_detailed
+    SELECT party_detailed, COUNT(*) AS count, "Least Populous" AS type
+        FROM most_populous_states M JOIN won_general_elections E on M.abbreviation = E.state_abbreviation
+        WHERE E.year >= ${minyear} AND E.year <= ${maxyear}
+        GROUP BY party_detailed
+    UNION
+    SELECT party_detailed, COUNT(*) AS count, "Most Populous" AS type
+        FROM least_populous_states M JOIN won_general_elections E on M.abbreviation = E.state_abbreviation
+        WHERE  E.year >= ${minyear} AND E.year <= ${maxyear}
+        GROUP BY party_detailed
     `;
   //execute the query and return the results
   connection.query(query, function (error, results, fields) {
