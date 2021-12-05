@@ -993,8 +993,8 @@ async function company_political(req, res) {
   const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
   // write the query
   query = `SELECT E.party_detailed, COUNT(DISTINCT C.name) AS num_companies, E.year AS year
-    FROM Company C JOIN Elections E on C.state = E.state_abbreviation
-    WHERE E.won = 1 and E. year >= ${minyear} AND E.year <= ${maxyear}
+    FROM Company C JOIN won_general_elections E on C.state = E.state_abbreviation
+    WHERE E. year >= ${minyear} AND E.year <= ${maxyear}
     GROUP BY E.party_detailed, E.year`;
   //execute the query and return the results
   connection.query(query, function (error, results, fields) {
