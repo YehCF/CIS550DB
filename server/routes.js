@@ -862,7 +862,7 @@ async function elections_fewest(req, res) {
   // second part of the query
   query =
     query +
-    `year >= ${minyear} AND year <= ${maxyear} AND percent_votes <= ALL(
+    `year >= ${minyear} AND year <= ${maxyear} AND stage = "gen" AND percent_votes <= ALL(
         SELECT percent_votes
         FROM Elections E2 
         WHERE E2.year = E1.year AND E2.state_abbreviation = E1.state_abbreviation
@@ -876,8 +876,8 @@ async function elections_fewest(req, res) {
   // now, join with information about the number of elections each party won
   query = query + `), 
   most_votes AS (SELECT party_detailed, COUNT(*) AS most_elections 
-    FROM Elections
-    WHERE year >= ${minyear} AND year <= ${maxyear} AND won = 1 `
+    FROM won_general_elections
+    WHERE year >= ${minyear} AND year <= ${maxyear} `
   if (state){
     query = query + ` AND state_abbreviation = "${state}"`;
   }
