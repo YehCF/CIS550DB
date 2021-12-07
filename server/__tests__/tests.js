@@ -183,7 +183,7 @@ test("GET /yelp/filter?categories&start categories+start", async () => {
     .then((response) => {
       expect(response.body.results.length).toEqual(670)
     });
-});
+},30000);
 
 test("GET /yelp/filter?categories&end categories+end", async () => {
   await supertest(app).get("/yelp/filter?categories=Apartments&end=2019-03-01")

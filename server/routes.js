@@ -510,7 +510,8 @@ async function yelp_map(req, res) {
 		WHERE review_date BETWEEN '${startDate}' AND '${endDate}'
 	    )sd
 	ON s.abbreviation = sd.state
-	GROUP BY abbreviation;
+	GROUP BY abbreviation
+	ORDER BY abbreviation;
 	`,
     function (error, results, fields) {
       if (error) {

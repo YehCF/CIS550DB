@@ -18,7 +18,8 @@ import {
     Row,
     Col,
     DatePicker,
-    Space
+    Space,
+    Divider
 } from 'antd'
 import MenuBar from '../components/MenuBar';
 // import logo from './Yelp_Logo.png';
@@ -149,7 +150,8 @@ class YelpPage extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            usstate: null,
+            usstate: window.location.search ? (window.location.search.substring(1).split('state=').length < 2)
+                    ? null : window.location.search.substring(1).split('state=')[1].split("&")[0] : null,
             startTime: '',
             endTime: '',
             categories: null,
@@ -237,14 +239,18 @@ class YelpPage extends React.Component {
               })
               start = this.state.startTime
               end = this.state.endTime
+              
+              this.setState({
+                startTime: window.location.search ? (window.location.search.substring(1).split('start=').length < 2)
+                            ? start : moment(window.location.search.substring(1).split('start=')[1].split("&")[0]).isValid()
+                            ? window.location.search.substring(1).split('start=')[1].split("&")[0]:start:start,
+                endTime: window.location.search ? (window.location.search.substring(1).split('end=').length < 2)
+                            ? end : moment(window.location.search.substring(1).split('end=')[1].split("&")[0]).isValid()
+                            ? window.location.search.substring(1).split('end=')[1].split("&")[0] : end:end
+              })
             })
 
-        getYelpState().then(res=>{
-            this.setState({yelpStateFilter: res.results.map(d => ({
-                "value" : d.state,
-                "label" : d.state
-              }))})
-        })
+       
 
         getNews("yelp", 20, "en", "publishedAt").then(res=>{
             this.setState({
@@ -262,25 +268,44 @@ class YelpPage extends React.Component {
             })
         })
 
-        
-        getYelpFilter(this.state.startTime, this.state.endTime, this.state.usstate ? this.state.usstate:'',
-            this.state.categories ? encodeURIComponent(this.state.categories):'').then(res => {
-                 this.setState({ 
-                     yelpResults: res.results
-                    ,isFetching: false
-                    ,usstate: null
-                    ,categories: null
-                    ,disable: false,
-                    graph_review_name: "Review Count of " + 
-                            (this.state.usstate ? this.state.usstate:"All") + " state, " 
-                            + (this.state.categories ? this.state.categories:"All") + " categories from "
-                            + (this.state.startTime !== '' ? this.state.startTime:start) + " to " 
-                            + (this.state.endTime !== '' ? this.state.endTime:end) + " V.S COVID-19",
-                    graph_star_name: "Average Star of " + 
-                            (this.state.usstate ? this.state.usstate:"All") + " state, " 
-                            + (this.state.categories ? this.state.categories:"All") + " categories, from "
-                            + (this.state.startTime !== '' ? this.state.startTime:start) + " to " 
-                            + (this.state.endTime !== '' ? this.state.endTime:end) + " V.S COVID-19" 
+         getYelpState().then(res=>{
+            this.setState({yelpStateFilter: res.results.map(d => ({
+                "value" : d.state,
+                "label" : d.state
+              }))})
+        }).then(res=>{
+            let exist = false;
+            for(let z = 0; z < this.state.yelpStateFilter.length; z++){
+                if(this.state.yelpStateFilter[z].value == this.state.usstate){
+                    exist = true;
+                }
+            }
+            if(!exist){
+                this.setState({
+                    usstate: null
+                });
+                }
+            }
+         ).then(res=>{
+            getYelpFilter(this.state.startTime, this.state.endTime, this.state.usstate ? this.state.usstate:'',
+                this.state.categories ? encodeURIComponent(this.state.categories):'').then(res => {
+                    this.setState({ 
+                        yelpResults: res.results
+                        ,isFetching: false
+                        // ,usstate: null
+                        ,categories: null
+                        ,disable: false,
+                        graph_review_name: "Review Count of " + 
+                                (this.state.usstate ? this.state.usstate:"All") + " state, " 
+                                + (this.state.categories ? this.state.categories:"All") + " categories from "
+                                + (this.state.startTime !== '' ? this.state.startTime:start) + " to " 
+                                + (this.state.endTime !== '' ? this.state.endTime:end) + " V.S COVID-19",
+                        graph_star_name: "Average Star of " + 
+                                (this.state.usstate ? this.state.usstate:"All") + " state, " 
+                                + (this.state.categories ? this.state.categories:"All") + " categories, from "
+                                + (this.state.startTime !== '' ? this.state.startTime:start) + " to " 
+                                + (this.state.endTime !== '' ? this.state.endTime:end) + " V.S COVID-19" 
+                })
             })
         })
         
@@ -366,6 +391,7 @@ class YelpPage extends React.Component {
                             
                             </Col>
                         </Row>
+                        <Divider />
                         <LoadingIndicator/>
                         <br/>
 
@@ -373,11 +399,12 @@ class YelpPage extends React.Component {
                         {graph_review}
                            
                         <br/>
-                        
+                        <Divider />
                         <h5>{this.state.graph_star_name}</h5>
                         {graph_star}
 
                         <br/>
+                        <Divider />
                         <h3>Yelp News</h3>
 
                         <Carousel variant="dark">
