@@ -1,7 +1,6 @@
 import React from "react";
 import { render } from "react-dom";
 
-
 // COVID PAGE
 import {
   Form,
@@ -24,7 +23,7 @@ import {
   getCovidData,
   getCaseAndVax,
   getCovidSeason,
-  getCaseAndVaxCulm
+  getCaseAndVaxCulm,
 } from "../fetcher";
 
 import * as d3 from "d3";
@@ -90,7 +89,7 @@ const stateColumns = [
 ];
 
 const CovidDualAxes = (data) => {
-    var config = {
+  var config = {
     data: [data.data, data.data],
     xField: "date",
     yField: ["vaxs", "new_case"],
@@ -150,21 +149,21 @@ const DemoColumn = (res) => {
   const config = {
     data,
     isGroup: true,
-    xField: 'season',
-    yField: 'cases',
-    seriesField: 'year',
+    xField: "season",
+    yField: "cases",
+    seriesField: "year",
 
     label: {
-      position: 'middle',
+      position: "middle",
       layout: [
         {
-          type: 'interval-adjust-position',
-        }, 
+          type: "interval-adjust-position",
+        },
         {
-          type: 'interval-hide-overlap',
-        }, 
+          type: "interval-hide-overlap",
+        },
         {
-          type: 'adjust-color',
+          type: "adjust-color",
         },
       ],
     },
@@ -225,7 +224,7 @@ class CovidPage extends React.Component {
   }
 
   handleCalendarChange(event) {
-    if (event[0] && event[1]) {
+    if (event && event[0] && event[1]) {
       this.setState({
         startDate: event[0].format(dateFormat).toString(),
         endDate: event[1].format(dateFormat).toString(),
@@ -371,24 +370,26 @@ class CovidPage extends React.Component {
                   }}
                 >
                   <h4>
-                  Data for: <span style={{ color: "blue" }}> {this.state.selectedCovidInfo["state"]} </span>
+                    Data for:{" "}
+                    <span style={{ color: "blue" }}>
+                      {" "}
+                      {this.state.selectedCovidInfo["state"]}{" "}
+                    </span>
                   </h4>
-                  <h5> New Cases & Daily Vaccine Administrations:{" "} </h5>
+                  <h5> New Cases & Daily Vaccine Administrations: </h5>
                   <CovidDualAxes data={this.state.selectedCOVID_VAX} />
-                  <br/>
-                  <h5> New Cases & Cumulative Vaccine Administrations:{" "} </h5>
+                  <br />
+                  <h5> New Cases & Cumulative Vaccine Administrations: </h5>
                   <CovidDualAxes data={this.state.selectedCOVID_VAX2} />
                   <h5>
-                    <br/>
-                     New Cases & The Seasons {" "}
-                     <DemoColumn data={this.state.demoData} />
+                    <br />
+                    New Cases & The Seasons{" "}
+                    <DemoColumn data={this.state.demoData} />
                   </h5>
                 </div>
               </div>
             )}
-            <div>
-
-            </div>
+            <div></div>
             {/* <div>
           <Divider />
         </div> */}

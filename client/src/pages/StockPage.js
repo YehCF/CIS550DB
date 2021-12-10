@@ -282,7 +282,7 @@ class StockPage extends React.Component {
   }
 
   handleCalendarChange(event) {
-    if (event[0] && event[1]) {
+    if (event && event[0] && event[1]) {
       this.setState({
         startDate: event[0].format(dateFormat).toString(),
         endDate: event[1].format(dateFormat).toString(),
@@ -361,7 +361,7 @@ class StockPage extends React.Component {
     this.setState({ industryThreshold: event.target.value });
   }
   handleIndustryCalendarChange(event) {
-    if (event[0] && event[1]) {
+    if (event && event[0] && event[1]) {
       this.setState({
         industryStartDate: event[0].format(dateFormat).toString(),
         industryEndDate: event[1].format(dateFormat).toString(),

@@ -121,7 +121,7 @@ class StatePage extends React.Component {
 
   // UI
   async handleCalendarChange(event) {
-    if (event[0] && event[1]) {
+    if (event && event[0] && event[1]) {
       this.setState({ mapLoading: true });
       this.setState({
         startDate: event[0].format(dateFormat).toString(),
@@ -341,7 +341,8 @@ class StatePage extends React.Component {
   }
   goToYelp(state, start, end) {
     //if state not exist in yelp data(yelp data only contains 31 state data), it will show all state stats
-    window.location = `/yelp?state=` + state + `&start=` + start + `&end=` + end;
+    window.location =
+      `/yelp?state=` + state + `&start=` + start + `&end=` + end;
   }
   goToVote() {
     // TO-DO
@@ -453,7 +454,10 @@ class StatePage extends React.Component {
                       {this.state.selectedStateInfo["numVaccinated"]}{" "}
                     </span>{" "}
                     people have received at least one shot of a vaccine{" "}
-                    <a onClick={event=>this.goToCOVID()} class="state-card-goto">
+                    <a
+                      onClick={(event) => this.goToCOVID()}
+                      class="state-card-goto"
+                    >
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>
@@ -464,7 +468,10 @@ class StatePage extends React.Component {
                       {this.state.selectedStateInfo["numWinsRatio"]}{" "}
                     </span>{" "}
                     % of the elections in 1976 - 2020.
-                    <a onClick={event=>this.goToVote()} class="state-card-goto">
+                    <a
+                      onClick={(event) => this.goToVote()}
+                      class="state-card-goto"
+                    >
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>
@@ -473,7 +480,10 @@ class StatePage extends React.Component {
                     <span class="state-card-info">
                       {this.state.selectedStateInfo["stockVolatility"]}
                     </span>
-                    <a onClick={event=>this.goToStock()} class="state-card-goto">
+                    <a
+                      onClick={(event) => this.goToStock()}
+                      class="state-card-goto"
+                    >
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>
@@ -483,7 +493,16 @@ class StatePage extends React.Component {
                       {this.state.selectedStateInfo["numReviews"]}
                     </span>{" "}
                     reviews!
-                    <a onClick={event=>this.goToYelp(this.state.selectedStateInfo['state'], this.state.startDate, this.state.endDate)} class="state-card-goto">
+                    <a
+                      onClick={(event) =>
+                        this.goToYelp(
+                          this.state.selectedStateInfo["state"],
+                          this.state.startDate,
+                          this.state.endDate
+                        )
+                      }
+                      class="state-card-goto"
+                    >
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
                   </Row>
