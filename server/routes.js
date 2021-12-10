@@ -11,13 +11,6 @@ const connection = mysql.createConnection({
 });
 connection.connect();
 
-// hello final project
-async function hello(req, res) {
-  res.send(
-    `This is CIS450/550 Final Project (Group31) - Polls, Pandemics and Possibly More!`
-  );
-}
-
 /**
  * Get the abbreviations of the states and their names
  * Route: /states
@@ -37,12 +30,13 @@ async function states(req, res) {
     FROM State 
     `,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      // } else if (results) {
+
+      // }
     }
   );
 }
@@ -95,13 +89,16 @@ async function stocks(req, res) {
     GROUP BY S.code
     `,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
+      res.json({ results: results });
     }
+    // function (error, results, fields) {
+    //   if (error) {
+    //     console.log(error);
+    //     res.json({ error: error });
+    //   } else if (results) {
+    //     res.json({ results: results });
+    //   }
+    // }
   );
 }
 
@@ -125,13 +122,16 @@ async function industries(req, res) {
     FROM Company
     `,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
+      res.json({ results: results });
     }
+    // function (error, results, fields) {
+    //   if (error) {
+    //     console.log(error);
+    //     res.json({ error: error });
+    //   } else if (results) {
+    //     res.json({ results: results });
+    //   }
+    // }
   );
 }
 
@@ -149,7 +149,7 @@ async function industries(req, res) {
  * {results (JSON array of {code (string), name (string), industry (string), volatility (float),
  * min_price (float), max_price (float), min_volume (float), max_volume (float), r_with_new_case (float)})}
  * Expected (Output) Behaviour:
- * - Example: /search/stocks or /search/stocks?start=2020-05-01&end=2020-12-31&code="AAPL"
+ * - Example: /search/stocks or /search/stocks?start=2020-05-01&end=2020-12-31&code=AAPL
  * - Example: /search/stocks?start=2020-05-01&end=2020-12-31&state=CA
  * - Example: /search/stocks?start=2020-05-01&end=2020-12-31&state=CA&industry=Info
  * - Example: /search/stocks?start=2020-05-01&end=2020-12-31&threshold=1.0
@@ -255,7 +255,7 @@ async function search_stocks(req, res) {
  * Get the daily price (close) of the selected stock and the number of new cases (total in all the states or where the headquarter of the company is)
  * Route: /case/stock
  * Route Parameter(s) @param: None
- * Query Parameter(s) @param: start (Date), end (Date), code (string), state (string)
+ * Query Parameter(s) @param: start (Date), end (Date), code (string)
  * Route Handler: case_and_stock(req, res)
  * Return Type: JSON
  * Return Parameters:
@@ -266,55 +266,32 @@ async function search_stocks(req, res) {
 async function case_and_stock(req, res) {
   // check query params
   const code = req.query.code;
-  const state = req.query.state;
   const start = req.query.start;
   const end = req.query.end;
-  if (state && !isNaN(state)) {
-    connection.query(
-      `
-      SELECT DATE_FORMAT(D.submission_date, "%m-%d-%Y") AS date, S.close AS price, D.new_case AS new_case
-      FROM Day D JOIN Stock S 
-        ON D.submission_date = S.date
-      WHERE D.state = '${state}' 
-          AND D.submission_date >= '${start}'
-          AND D.submission_date <= '${end}'
-          AND S.code = '${code}'
-      `,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
+  connection.query(
+    `
+    WITH NewCase AS (
+      SELECT submission_date, SUM(new_case) AS new_case
+      FROM Day
+      WHERE new_case >= 0
+      GROUP BY submission_date
+    )
+    SELECT DATE_FORMAT(N.submission_date, "%m-%d-%Y") AS date, S.close AS price, N.new_case AS new_case
+    FROM NewCase N JOIN Stock S 
+      ON N.submission_date = S.date
+    WHERE N.submission_date >= '${start}'
+        AND N.submission_date <= '${end}'
+        AND S.code = '${code}'
+    `,
+    function (error, results, fields) {
+      if (error) {
+        console.log(error);
+        res.json({ error: error });
+      } else if (results) {
+        res.json({ results: results });
       }
-    );
-  } else {
-    connection.query(
-      `
-      WITH NewCase AS (
-        SELECT submission_date, SUM(new_case) AS new_case
-        FROM Day
-        WHERE new_case >= 0
-        GROUP BY submission_date
-      )
-      SELECT DATE_FORMAT(N.submission_date, "%m-%d-%Y") AS date, S.close AS price, N.new_case AS new_case
-      FROM NewCase N JOIN Stock S 
-        ON N.submission_date = S.date
-      WHERE N.submission_date >= '${start}'
-          AND N.submission_date <= '${end}'
-          AND S.code = '${code}'
-      `,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
-      }
-    );
-  }
+    }
+  );
 }
 
 /**
@@ -356,12 +333,13 @@ async function state_industry(req, res) {
         AND state IS NOT NULL
     `,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      // } else if (results) {
+
+      // }
     }
   );
 }
@@ -514,13 +492,13 @@ async function yelp_map(req, res) {
 	ORDER BY abbreviation;
 	`,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-        // console.log(Object.values(results).length);
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      // } else if (results) {
+      //   // console.log(Object.values(results).length);
+      // }
     }
   );
 }
@@ -539,13 +517,13 @@ async function yelp_categories(req, res) {
     SELECT *
     FROM Categories;`,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-        // console.log(Object.values(results).length);
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      // } else if (results) {
+      //   // console.log(Object.values(results).length);
+      // }
     }
   );
 }
@@ -565,13 +543,13 @@ async function yelp_state(req, res) {
     FROM Business
     ORDER BY state;`,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-        // console.log(Object.values(results).length);
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      // } else if (results) {
+      //   // console.log(Object.values(results).length);
+      // }
     }
   );
 }
@@ -661,14 +639,14 @@ async function yelp_filter(req, res) {
 	 )
 	ORDER BY review_date;`,
       function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-          // console.log(Object.values(results).length);
-          // console.log("both");
-        }
+        res.json({ results: results });
+        // if (error) {
+        //   console.log(error);
+        //   res.json({ error: error });
+        // } else if (results) {
+        //   // console.log(Object.values(results).length);
+        //   // console.log("both");
+        // }
       }
     );
   } else if (state) {
@@ -707,14 +685,14 @@ async function yelp_filter(req, res) {
 
      `,
       function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-          // console.log(Object.values(results).length);
-          // console.log("state");
-        }
+        res.json({ results: results });
+        // if (error) {
+        //   console.log(error);
+        //   res.json({ error: error });
+        // } else if (results) {
+        //   // console.log(Object.values(results).length);
+        //   // console.log("state");
+        // }
       }
     );
   } else if (categories) {
@@ -757,14 +735,14 @@ async function yelp_filter(req, res) {
 	ORDER BY review_date;
      `,
       function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-          // Console.log(Object.values(results).length);
-          // console.log("categories");
-        }
+        res.json({ results: results });
+        // if (error) {
+        //   console.log(error);
+        //   res.json({ error: error });
+        // } else if (results) {
+        //   // Console.log(Object.values(results).length);
+        //   // console.log("categories");
+        // }
       }
     );
   } else {
@@ -801,14 +779,14 @@ async function yelp_filter(req, res) {
 	ORDER BY review_date;
      `,
       function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-          // console.log(Object.values(results).length);
-          // console.log("null");
-        }
+        res.json({ results: results });
+        // if (error) {
+        //   console.log(error);
+        //   res.json({ error: error });
+        // } else if (results) {
+        //   // console.log(Object.values(results).length);
+        //   // console.log("null");
+        // }
       }
     );
   }
@@ -875,20 +853,24 @@ async function elections_fewest(req, res) {
     query = query + ` LIMIT ${limit}`;
   }
   // now, join with information about the number of elections each party won
-  query = query + `), 
+  query =
+    query +
+    `), 
   most_votes AS (SELECT party_detailed, COUNT(*) AS most_elections 
     FROM won_general_elections
-    WHERE year >= ${minyear} AND year <= ${maxyear} `
-  if (state){
+    WHERE year >= ${minyear} AND year <= ${maxyear} `;
+  if (state) {
     query = query + ` AND state_abbreviation = "${state}"`;
   }
   // do a full join so that we have information for parties that win no elections or lose no elections
-  query = query + `GROUP BY party_detailed)
+  query =
+    query +
+    `GROUP BY party_detailed)
   SELECT L.party_detailed, IFNULL(M.most_elections,0) AS most_elections, L.least_elections
   FROM least_votes L LEFT JOIN most_votes M on L.party_detailed = M.party_detailed 
   UNION
   SELECT M.party_detailed, M.most_elections, IFNULL(L.least_elections, 0) AS least_elections
-  FROM most_votes M LEFT  JOIN least_votes L on  M.party_detailed = L.party_detailed`
+  FROM most_votes M LEFT  JOIN least_votes L on  M.party_detailed = L.party_detailed`;
 
   //make the query and log the results
   connection.query(query, function (error, results, fields) {
@@ -950,8 +932,7 @@ async function elections_populous(req, res) {
   const maxyear = req.query.maxyear ? req.query.maxyear : 2020;
   const limit = req.query.limit ? req.query.limit : 5;
   // write out the query
-  query =
-      `WITH most_populous_states AS (
+  query = `WITH most_populous_states AS (
         SELECT abbreviation
         FROM State
         ORDER BY population DESC
@@ -1023,64 +1004,65 @@ async function covid_gen(req, res) {
       Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
     FROM Day`,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      // } else if (results) {
+      //   res.json({ results: results });
+      // }
     }
   );
 }
 
-/*
-Examples:
-  http://localhost:8080/covid?state=CA
-  http://localhost:8080/covid?state=NM
-  http://localhost:8080/covid?state=WA
-*/
-async function covid_state(req, res) {
-  const state = req.query.state;
+// /*
+// Examples:
+//   http://localhost:8080/covid?state=CA
+//   http://localhost:8080/covid?state=NM
+//   http://localhost:8080/covid?state=WA
+// */
+// async function covid_state(req, res) {
+//   const state = req.query.state;
 
-  if (!state) {
-    // defaults to california
-    connection.query(
-      `SELECT
-        sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
-        Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
-        sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
-        Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
-        WHERE state = 'CA'
-      FROM Day`,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
-      }
-    );
-  } else {
-    connection.query(
-      `SELECT
-        sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
-        Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
-        sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
-        Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
-        WHERE state = '${state}'
-      FROM Day`,
-      function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
-      }
-    );
-  }
-}
+//   if (!state) {
+//     // defaults to california
+//     connection.query(
+//       `SELECT
+//         sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
+//         Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
+//         sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
+//         Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
+//         WHERE state = 'CA'
+//       FROM Day`,
+//       function (error, results, fields) {
+//         if (error) {
+//           console.log(error);
+//           res.json({ error: error });
+//         } else if (results) {
+//           res.json({ results: results });
+//         }
+//       }
+//     );
+//   } else {
+//     connection.query(
+//       `SELECT
+//         sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
+//         Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
+//         sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
+//         Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
+//         WHERE state = '${state}'
+//       FROM Day`,
+//       function (error, results, fields) {
+//         if (error) {
+//           console.log(error);
+//           res.json({ error: error });
+//         } else if (results) {
+//           res.json({ results: results });
+//         }
+//       }
+//     );
+//   }
+// }
 
 /*
 Examples:
@@ -1139,42 +1121,43 @@ async function covid_season(req, res) {
       AND (state = '${state}')
       GROUP BY state)`,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      // } else if (results) {
+
+      // }
     }
   );
 }
 
-/*
-Examples:
-  http://localhost:8080/covid/covid_comparison?state1=NM&state2=CA
-*/
-async function covid_comparison(req, res) {
-  const state1 = req.query.state1;
-  const state2 = req.query.state2;
-  connection.query(
-    `SELECT
-      state as State
-      sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
-      Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
-      sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
-      Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
-      WHERE state = '${state1}' OR  state = '${state2}'
-    FROM Day`,
-    function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
-    }
-  );
-}
+// /*
+// Examples:
+//   http://localhost:8080/covid/covid_comparison?state1=NM&state2=CA
+// */
+// async function covid_comparison(req, res) {
+//   const state1 = req.query.state1;
+//   const state2 = req.query.state2;
+//   connection.query(
+//     `SELECT
+//       state as State
+//       sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
+//       Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
+//       sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
+//       Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
+//       WHERE state = '${state1}' OR  state = '${state2}'
+//     FROM Day`,
+//     function (error, results, fields) {
+//       if (error) {
+//         console.log(error);
+//         res.json({ error: error });
+//       } else if (results) {
+//         res.json({ results: results });
+//       }
+//     }
+//   );
+// }
 
 /*
 Examples:
@@ -1199,12 +1182,13 @@ async function covid_filter(req, res) {
       WHERE submission_date BETWEEN '${start}' AND '${end}' AND state = '${state}'
       GROUP BY state`,
       function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
+        res.json({ results: results });
+        // if (error) {
+        //   console.log(error);
+        //   res.json({ error: error });
+        // } else if (results) {
+
+        // }
       }
     );
   } else {
@@ -1221,12 +1205,12 @@ async function covid_filter(req, res) {
       WHERE submission_date BETWEEN '${start}' AND '${end}'
       GROUP BY state`,
       function (error, results, fields) {
-        if (error) {
-          console.log(error);
-          res.json({ error: error });
-        } else if (results) {
-          res.json({ results: results });
-        }
+        res.json({ results: results });
+        // if (error) {
+        //   console.log(error);
+        //   res.json({ error: error });
+        // } else if (results) {
+        // }
       }
     );
   }
@@ -1262,12 +1246,13 @@ async function case_and_vax(req, res) {
       WHERE N.submission_date BETWEEN '${start}'AND '${end}'
       AND V.Date BETWEEN '${start}'AND '${end}'`,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      // } else if (results) {
+
+      // }
     }
   );
 }
@@ -1291,12 +1276,13 @@ async function case_and_vax_culm(req, res) {
         AND V.Date BETWEEN '${start}'AND '${end}'
         AND date_type = 'Admin'`,
     function (error, results, fields) {
-      if (error) {
-        console.log(error);
-        res.json({ error: error });
-      } else if (results) {
-        res.json({ results: results });
-      }
+      res.json({ results: results });
+      // if (error) {
+      //   console.log(error);
+      //   res.json({ error: error });
+      //   console.log("hreh");
+      // } else if (results) {
+      // }
     }
   );
 }
@@ -1322,7 +1308,6 @@ async function state_and_vax(req, res) {
     `,
     function (error, results, fields) {
       if (error) {
-        console.log(error);
         res.json({ error: error });
       } else if (results) {
         res.json({ results: results });
@@ -1332,7 +1317,6 @@ async function state_and_vax(req, res) {
 }
 
 module.exports = {
-  hello,
   case_and_stock,
   states,
   industries,
@@ -1352,10 +1336,10 @@ module.exports = {
   elections_populous,
   company_political,
   covid_gen,
-  covid_comparison,
+  // covid_comparison,
   covid_filter,
   covid_season,
-  covid_state,
+  // covid_state,
   case_and_vax,
   state_and_vax,
   case_and_vax_culm,
