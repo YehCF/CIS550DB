@@ -452,8 +452,7 @@ class StatePage extends React.Component {
                       {" "}
                       {this.state.selectedStateInfo["numVaccinated"]}{" "}
                     </span>{" "}
-                    people have received at least one shot of a vaccine Case
-                    related sentence{" "}
+                    people have received at least one shot of a vaccine{" "}
                     <a onClick={event=>this.goToCOVID()} class="state-card-goto">
                       <FontAwesomeIcon icon={faInfoCircle} />
                     </a>
