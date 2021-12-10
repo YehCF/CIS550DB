@@ -11,9 +11,6 @@ app.use(
   })
 );
 
-// Route 1 - register as GET
-app.get("/hello", routes.hello);
-
 // Route for State
 app.get("/states", routes.states);
 
@@ -52,21 +49,21 @@ app.get("/elections/populous", routes.elections_populous);
 // Route 14
 app.get("/elections/companies", routes.company_political);
 
-/*COVID Routes*/ 
+/*COVID Routes*/
 
-// gets general covid data across country 
+// gets general covid data across country
 app.get("/covid", routes.covid_gen);
 
-// gets more specific data for a specific state;
-app.get("/covid/state", routes.covid_state);
+// // gets more specific data for a specific state;
+// app.get("/covid/state", routes.covid_state);
 
-// gets more specific data for a season, accross two years 
+// gets more specific data for a season, accross two years
 app.get("/covid/season", routes.covid_season);
 
-// takes in two states, and produces data for 
-app.get("/covid/comparison", routes.covid_comparison);
+// // takes in two states, and produces data for
+// app.get("/covid/comparison", routes.covid_comparison);
 
-// takes in a timeframe, and an optional state list, produces covid stats 
+// takes in a timeframe, and an optional state list, produces covid stats
 app.get("/covid/filter", routes.covid_filter);
 
 // takes in a timeframe, and a state list, produces data of daily vaccaintionss and cases
@@ -75,10 +72,8 @@ app.get("/covid/vax", routes.case_and_vax);
 // takes in a timeframe, and a state list, produces data of Cumulative vaccaintionss and cases
 app.get("/covid/vax/culm", routes.case_and_vax_culm);
 
-// takes in a state, and outputs the cumulative amount of people vaccainted (as of 2021-12-01) 
+// takes in a state, and outputs the cumulative amount of people vaccainted (as of 2021-12-01)
 app.get("/covid/vax/state", routes.state_and_vax);
-
-
 
 app.listen(config.server_port, () => {
   console.log(
