@@ -1,0 +1,4 @@
+{
+    "industries":[{"industry":"Health Care"},{"industry":"Industrials"},{"industry":"Consumer Discretionary"},{"industry":"Information Technology"},{"industry":"Consumer Staples"},{"industry":"Utilities"},{"industry":"Financials"},{"industry":"Materials"},{"industry":"Real Estate"},{"industry":"Energy"},{"industry":"Communication Services"}],
+    "aapl":[{"code":"AAPL","name":"Apple","industry":"Information Technology","volatility":0.891,"min_price":72.27,"max_price":136.69,"min_volume":1200,"max_volume":99600,"r_with_new_case":0.627}]
+}

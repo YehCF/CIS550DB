@@ -1,0 +1,6 @@
+{
+    "covid":[{"Total Confirmed Cases (to-date)":6754860069,"Average Confirmed Cases per day":376610,"Total Confirmed Deaths (to-date)":125475329,"Average Confirmed Deaths, per day ":7060}],
+    "ca":[{"Total Confirmed Cases (to-date)":6754860069,"Average Confirmed Cases per day":376610,"Total Confirmed Deaths (to-date)":125475329,"Average Confirmed Deaths, per day ":7060}],
+    "season":[{"cases":221804877,"season":"Spring","year":"2021"},{"cases":3212560,"season":"Spring","year":"2020"},{"cases":30046114,"season":"Summer","year":"2020"},{"cases":250765786,"season":"Summer","year":"2021"},{"cases":188011895,"season":"Fall","year":"2021"},{"cases":58023539,"season":"Fall","year":"2020"}],
+    "filter":[{"state":"CA","conf_cases":292350406,"avg_conf_cases":3248340,"tot_prob_cases":0,"avg_prob_cases":0,"tot_death":4008508,"avg_death":44540}]
+}
