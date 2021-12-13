@@ -213,10 +213,6 @@ class YelpPage extends React.Component {
     }
 
     handleClear(){
-        // Array.from(document.querySelectorAll(".ant-select-single .ant-select-selector .ant-select-selection-item")).forEach(
-        //     // console.log(input.innerText)
-        //     input => (input.innerText = null)
-        //   );
         this.setState({
             usstate: null,
             startTime: start,
@@ -312,8 +308,6 @@ class YelpPage extends React.Component {
     }
 
     render() {
-        // console.log(this.state.yelpNews.length)
-        // console.log(this.state.yelpResults.length)
         let graph_review='';
         let graph_star='';
         if(!this.state.disable && !this.state.isFetching){

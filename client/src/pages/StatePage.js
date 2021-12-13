@@ -201,9 +201,6 @@ class StatePage extends React.Component {
           stockVolatility: 0,
           numConfirmedCases: 0,
           numConfirmedCasesRatio: 0,
-
-          // TODO: add other key-values for initialization
-          // TODO: case, vote, yelp
           numVaccinated: 0,
           numVaccinatedRatio: 0,
           numWins: 0,
@@ -336,7 +333,6 @@ class StatePage extends React.Component {
   }
 
   goToStock() {
-    // TO-DO
     window.location = `/stock`;
   }
   goToYelp(state, start, end) {
@@ -345,11 +341,9 @@ class StatePage extends React.Component {
       `/yelp?state=` + state + `&start=` + start + `&end=` + end;
   }
   goToVote() {
-    // TO-DO
     window.location = `/vote`;
   }
   goToCOVID() {
-    // TO-DO
     window.location = `/covid`;
   }
 
@@ -518,14 +512,4 @@ class StatePage extends React.Component {
 
 export default StatePage;
 
-// {/* for stock */}
-// <Row gutter="30" align="middle" justify="center">
-// <Col>
-//   Volatility:{" "}
-//   {this.state.selectedStateInfo["stockVolatility"]}
-// </Col>
-// <Col>
-//   {/* TO-DO: change to  {this.state.selectedStateInfo["companyCode"]} */}
-//   Company: <a onClick={this.goToStock}>APPL</a>
-// </Col>
-// </Row>
+

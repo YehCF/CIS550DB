@@ -990,12 +990,6 @@ async function covid_season(req, res) {
       GROUP BY state)`,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-
-      // }
     }
   );
 }

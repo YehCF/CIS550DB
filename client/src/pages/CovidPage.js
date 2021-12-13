@@ -390,9 +390,7 @@ class CovidPage extends React.Component {
               </div>
             )}
             <div></div>
-            {/* <div>
-          <Divider />
-        </div> */}
+
           </CardBody>
         </Card>
       </div>
