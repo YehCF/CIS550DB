@@ -54,14 +54,8 @@ app.get("/elections/companies", routes.company_political);
 // gets general covid data across country
 app.get("/covid", routes.covid_gen);
 
-// // gets more specific data for a specific state;
-// app.get("/covid/state", routes.covid_state);
-
 // gets more specific data for a season, accross two years
 app.get("/covid/season", routes.covid_season);
-
-// // takes in two states, and produces data for
-// app.get("/covid/comparison", routes.covid_comparison);
 
 // takes in a timeframe, and an optional state list, produces covid stats
 app.get("/covid/filter", routes.covid_filter);
