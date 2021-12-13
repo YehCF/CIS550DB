@@ -1,5 +1,5 @@
 
-# CIS450/550 - Final Project
+# CIS450/550 - Final Project: Polls, Pandemics, and Possibly More!
 ## Members: 
 - Benjamin Kosko, bkosko@seas.upenn.edu, bkosko
 - Victor Lin, lin1129@seas.upenn.edu, victorHLin
