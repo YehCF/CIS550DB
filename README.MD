@@ -82,4 +82,7 @@ browser and go to `http://localhost:3000/`.
 ***Elections Data Wrangling*** Place `preprocess_voting.R` and `1976-2020-senate.csv` in the same directory (both are in the `preprocessing/voting_preprocessing`
 directory by default). Then either execute the R scripe on the command line or open `preprocess_voting.R` in RStudio, set the session's working
 directory to the source file location, and execute the entire script. 
+
+***Stock Data Wrangling*** Run `stock_preprocess.ipynb` to preprocess the original table downloaded from (https://www.kaggle.com/shannanl/sp500-dataset?select=sp500+agg.csv). Then, the preprocessed stock table can be retrieved.
+
   
