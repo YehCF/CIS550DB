@@ -40,12 +40,6 @@ const default_period = ["2020-01-01", "2020-12-31"];
 
 // The colors for USA State Map vs. Industry Volatility
 const nIndustryColors = 11;
-// const industryColorArray = colormap({
-//   colormap: "oxygen",
-//   nshades: nIndustryColors,
-//   format: "hex",
-//   alpha: 1.0,
-// });
 const colorScaler = d3
   .scaleLinear()
   .range(["#e8e8e8", "#5ac8c8"])

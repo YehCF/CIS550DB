@@ -31,12 +31,6 @@ async function states(req, res) {
     `,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-
-      // }
     }
   );
 }
@@ -91,14 +85,6 @@ async function stocks(req, res) {
     function (error, results, fields) {
       res.json({ results: results });
     }
-    // function (error, results, fields) {
-    //   if (error) {
-    //     console.log(error);
-    //     res.json({ error: error });
-    //   } else if (results) {
-    //     res.json({ results: results });
-    //   }
-    // }
   );
 }
 
@@ -124,14 +110,6 @@ async function industries(req, res) {
     function (error, results, fields) {
       res.json({ results: results });
     }
-    // function (error, results, fields) {
-    //   if (error) {
-    //     console.log(error);
-    //     res.json({ error: error });
-    //   } else if (results) {
-    //     res.json({ results: results });
-    //   }
-    // }
   );
 }
 
@@ -334,12 +312,6 @@ async function state_industry(req, res) {
     `,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-
-      // }
     }
   );
 }
@@ -448,10 +420,6 @@ const getTime = () => {
           console.log(error);
           resolve();
         } else if (results) {
-          // yelp_start_date = results[0].start_date;
-          // console.log(yelp_start_date);
-          // yelp_last_date = results[0].end_date;
-          // console.log(yelp_last_date);
           yelp_period = results;
           resolve();
         }
@@ -493,12 +461,6 @@ async function yelp_map(req, res) {
 	`,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-      //   // console.log(Object.values(results).length);
-      // }
     }
   );
 }
@@ -518,12 +480,6 @@ async function yelp_categories(req, res) {
     FROM Categories;`,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-      //   // console.log(Object.values(results).length);
-      // }
     }
   );
 }
@@ -544,12 +500,6 @@ async function yelp_state(req, res) {
     ORDER BY state;`,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-      //   // console.log(Object.values(results).length);
-      // }
     }
   );
 }
@@ -640,13 +590,6 @@ async function yelp_filter(req, res) {
 	ORDER BY review_date;`,
       function (error, results, fields) {
         res.json({ results: results });
-        // if (error) {
-        //   console.log(error);
-        //   res.json({ error: error });
-        // } else if (results) {
-        //   // console.log(Object.values(results).length);
-        //   // console.log("both");
-        // }
       }
     );
   } else if (state) {
@@ -686,13 +629,6 @@ async function yelp_filter(req, res) {
      `,
       function (error, results, fields) {
         res.json({ results: results });
-        // if (error) {
-        //   console.log(error);
-        //   res.json({ error: error });
-        // } else if (results) {
-        //   // console.log(Object.values(results).length);
-        //   // console.log("state");
-        // }
       }
     );
   } else if (categories) {
@@ -736,13 +672,6 @@ async function yelp_filter(req, res) {
      `,
       function (error, results, fields) {
         res.json({ results: results });
-        // if (error) {
-        //   console.log(error);
-        //   res.json({ error: error });
-        // } else if (results) {
-        //   // Console.log(Object.values(results).length);
-        //   // console.log("categories");
-        // }
       }
     );
   } else {
@@ -780,13 +709,6 @@ async function yelp_filter(req, res) {
      `,
       function (error, results, fields) {
         res.json({ results: results });
-        // if (error) {
-        //   console.log(error);
-        //   res.json({ error: error });
-        // } else if (results) {
-        //   // console.log(Object.values(results).length);
-        //   // console.log("null");
-        // }
       }
     );
   }
@@ -1005,64 +927,10 @@ async function covid_gen(req, res) {
     FROM Day`,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-      //   res.json({ results: results });
-      // }
     }
   );
 }
 
-// /*
-// Examples:
-//   http://localhost:8080/covid?state=CA
-//   http://localhost:8080/covid?state=NM
-//   http://localhost:8080/covid?state=WA
-// */
-// async function covid_state(req, res) {
-//   const state = req.query.state;
-
-//   if (!state) {
-//     // defaults to california
-//     connection.query(
-//       `SELECT
-//         sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
-//         Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
-//         sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
-//         Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
-//         WHERE state = 'CA'
-//       FROM Day`,
-//       function (error, results, fields) {
-//         if (error) {
-//           console.log(error);
-//           res.json({ error: error });
-//         } else if (results) {
-//           res.json({ results: results });
-//         }
-//       }
-//     );
-//   } else {
-//     connection.query(
-//       `SELECT
-//         sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
-//         Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
-//         sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
-//         Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
-//         WHERE state = '${state}'
-//       FROM Day`,
-//       function (error, results, fields) {
-//         if (error) {
-//           console.log(error);
-//           res.json({ error: error });
-//         } else if (results) {
-//           res.json({ results: results });
-//         }
-//       }
-//     );
-//   }
-// }
 
 /*
 Examples:
@@ -1122,42 +990,10 @@ async function covid_season(req, res) {
       GROUP BY state)`,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-
-      // }
     }
   );
 }
 
-// /*
-// Examples:
-//   http://localhost:8080/covid/covid_comparison?state1=NM&state2=CA
-// */
-// async function covid_comparison(req, res) {
-//   const state1 = req.query.state1;
-//   const state2 = req.query.state2;
-//   connection.query(
-//     `SELECT
-//       state as State
-//       sum(conf_cases) AS 'Total Confirmed Cases (to-date)',
-//       Round(avg(conf_cases),-1) AS 'Average Confirmed Cases per day',
-//       sum(conf_death) AS 'Total Confirmed Deaths (to-date)',
-//       Round(avg(conf_death),-1) AS 'Average Confirmed Deaths, per day '
-//       WHERE state = '${state1}' OR  state = '${state2}'
-//     FROM Day`,
-//     function (error, results, fields) {
-//       if (error) {
-//         console.log(error);
-//         res.json({ error: error });
-//       } else if (results) {
-//         res.json({ results: results });
-//       }
-//     }
-//   );
-// }
 
 /*
 Examples:
@@ -1183,12 +1019,6 @@ async function covid_filter(req, res) {
       GROUP BY state`,
       function (error, results, fields) {
         res.json({ results: results });
-        // if (error) {
-        //   console.log(error);
-        //   res.json({ error: error });
-        // } else if (results) {
-
-        // }
       }
     );
   } else {
@@ -1206,11 +1036,6 @@ async function covid_filter(req, res) {
       GROUP BY state`,
       function (error, results, fields) {
         res.json({ results: results });
-        // if (error) {
-        //   console.log(error);
-        //   res.json({ error: error });
-        // } else if (results) {
-        // }
       }
     );
   }
@@ -1247,12 +1072,6 @@ async function case_and_vax(req, res) {
       AND V.Date BETWEEN '${start}'AND '${end}'`,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      // } else if (results) {
-
-      // }
     }
   );
 }
@@ -1277,12 +1096,6 @@ async function case_and_vax_culm(req, res) {
         AND date_type = 'Admin'`,
     function (error, results, fields) {
       res.json({ results: results });
-      // if (error) {
-      //   console.log(error);
-      //   res.json({ error: error });
-      //   console.log("hreh");
-      // } else if (results) {
-      // }
     }
   );
 }
@@ -1336,10 +1149,8 @@ module.exports = {
   elections_populous,
   company_political,
   covid_gen,
-  // covid_comparison,
   covid_filter,
   covid_season,
-  // covid_state,
   case_and_vax,
   state_and_vax,
   case_and_vax_culm,
