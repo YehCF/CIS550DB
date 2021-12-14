@@ -85,4 +85,13 @@ directory to the source file location, and execute the entire script.
 
 ***Stock Data Wrangling*** Run `stock_preprocess.ipynb` to preprocess the original table downloaded from (https://www.kaggle.com/shannanl/sp500-dataset?select=sp500+agg.csv). Then, the preprocessed stock table can be retrieved.
 
-  
+***Yelp data Wrangling***
+Get `yelp_academic_dataset_business.json`, `yelp_academic_dataset_user.json` and `yelp_academic_dataset_review.json` from https://www.yelp.com/dataset.<br />
+To wrangling `yelp_academic_dataset_review.json` and `yelp_academic_dataset_user.json`, you need to execute `chunk.sh` first. It will chunk the original file to smaller size files to speed up wrangling time. <br />
+Usage of `chunk.sh`: <br />
+```
+./chunck.sh {your_file_name}
+```
+Follow the program instruction to input the number of rows you want to store in a file. After chunking data, put all chunk file to the directory, and modify the path variable with directory path in `yelp_review.py` and `yelp_user.py`. Then execute `yelp_review.py` to create csv file for Review table and execute `yelp_user.py` to create csv file for User table.<br />
+To wrangling `yelp_academic_dataset_business.json`, you just need to modify file path in both `yelp_business.py` and `yelp_categories.py`. `yelp_business.py` will create the csv file for Business table. `yelp_categories.py` will create two csv files, one for Categories table and the other for Business_Categories table.
+
