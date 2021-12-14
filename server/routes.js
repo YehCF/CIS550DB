@@ -866,12 +866,12 @@ async function elections_populous(req, res) {
         ORDER BY population
         LIMIT ${limit}
     )
-    SELECT party_detailed, COUNT(*) AS count, "Least Populous" AS type
+    SELECT party_detailed, COUNT(*) AS count, "Most Populous" AS type
         FROM most_populous_states M JOIN won_general_elections E on M.abbreviation = E.state_abbreviation
         WHERE E.year >= ${minyear} AND E.year <= ${maxyear}
         GROUP BY party_detailed
     UNION
-    SELECT party_detailed, COUNT(*) AS count, "Most Populous" AS type
+    SELECT party_detailed, COUNT(*) AS count, "Least Populous" AS type
         FROM least_populous_states M JOIN won_general_elections E on M.abbreviation = E.state_abbreviation
         WHERE  E.year >= ${minyear} AND E.year <= ${maxyear}
         GROUP BY party_detailed
