@@ -85,7 +85,10 @@ directory to the source file location, and execute the entire script.
 
 ***Stock Data Wrangling*** Run `stock_preprocess.ipynb` to preprocess the original table downloaded from (https://www.kaggle.com/shannanl/sp500-dataset?select=sp500+agg.csv). Then, the preprocessed stock table can be retrieved.
 
-***Yelp Data Wrangling***
+***COVID/Vaccine Data Wrangling***
+In DataGrip, replaced all slashes with hypens so all the dates (in both files) followed the MM-DD-YYYY format. Vaccination data also had several negative values that needed to be corrected; did this by sorting by case numbers, and then taking the absolute value of the clearly wrong 6 negative values. 
+
+***Yelp data Wrangling***
 Get `yelp_academic_dataset_business.json`, `yelp_academic_dataset_user.json` and `yelp_academic_dataset_review.json` from https://www.yelp.com/dataset.<br />
 To wrangling `yelp_academic_dataset_review.json` and `yelp_academic_dataset_user.json`, you need to execute `chunk.sh` first. It will chunk the original file to smaller size files to speed up wrangling time. <br />
 Usage of `chunk.sh`: <br />
